@@ -158,6 +158,13 @@ php artisan migrate:fresh --seed --seeder=DemoDataSeeder
 php artisan serve
 ```
 
+### Share it with friends
+
+You can show your local site through a tunnel such as VS Code port forwarding (set the port visibility to **Public**) or ngrok.
+
+- Run `npm run build` first and do not leave `npm run dev` running. The Vite dev server is only reachable from your own computer, so a friend's browser would load the page without any styling.
+- The app trusts the `X-Forwarded-Proto`, `X-Forwarded-Host` and `X-Forwarded-Port` headers, so links and assets use the tunnel's `https` address instead of being blocked as mixed content.
+
 ## Configuration
 
 | `.env` | Purpose |
