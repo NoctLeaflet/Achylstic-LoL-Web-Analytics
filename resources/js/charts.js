@@ -141,7 +141,8 @@ export function registerCharts(Alpine) {
     }));
 
     // Radar. data = { labels, datasets: [{ label, color, values (0-100), raw }] }
-    Alpine.data('radarChart', (data) => ({
+    // options.legend = false hides Chart.js' own legend (the lane pop-up draws its own, beside the chart).
+    Alpine.data('radarChart', (data, options = {}) => ({
         chart: null,
 
         init() {
@@ -171,6 +172,7 @@ export function registerCharts(Alpine) {
                         },
                     },
                     plugins: {
+                        legend: { display: options.legend !== false },
                         tooltip: {
                             callbacks: {
                                 label: (item) => `${item.dataset.label}: ${data.datasets[item.datasetIndex].raw[item.dataIndex]}`,

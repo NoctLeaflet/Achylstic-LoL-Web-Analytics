@@ -20,6 +20,7 @@ class PlayerPageTest extends TestCase
 
         $this->withoutVite();
         Cache::put('ddragon.version', '16.1.1');
+        Cache::put('ddragon.champions.16.1.1', []);   // champion images by id; empty = fall back to names
         Http::fake();
     }
 
@@ -67,7 +68,7 @@ class PlayerPageTest extends TestCase
         $this->addSnapshot($player, RankedQueue::Solo, 'GOLD', 'II', 54, capturedAt: now()->subDay());
         $this->addSnapshot($player, RankedQueue::Solo, 'GOLD', 'I', 10);
 
-        $response = $this->get("/players/{$player->id}")->assertOk();
+        $response = $this->get("/players/{$player->id}?queue=solo")->assertOk();
 
         $response->assertSee('x-data="lpChart(', false);
         $chart = $response->viewData('lpChart');
@@ -81,7 +82,7 @@ class PlayerPageTest extends TestCase
     {
         $player = $this->makePlayer('Alpha');
 
-        $this->get("/players/{$player->id}")
+        $this->get("/players/{$player->id}?queue=solo")
             ->assertOk()
             ->assertSee('Unranked di Solo/Duo')
             ->assertSee('riot:sync-ranks')
@@ -111,7 +112,7 @@ class PlayerPageTest extends TestCase
         $this->addGame($player, ['champion_name' => 'Ahri'], queueId: 420);
         $this->addGame($player, ['champion_name' => 'Zed', 'champion_id' => 238], queueId: 440);
 
-        $solo = $this->get("/players/{$player->id}")->assertOk();
+        $solo = $this->get("/players/{$player->id}?queue=solo")->assertOk();
         $solo->assertSee('Gold IV');
         $solo->assertDontSee('Platinum I');
         $this->assertSame(1, $solo->viewData('stats')['games']);

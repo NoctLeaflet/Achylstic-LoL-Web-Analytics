@@ -56,10 +56,23 @@ return [
         'platform' => env('RIOT_PLATFORM', 'sg2'),
         'region' => env('RIOT_REGION', 'sea'),
         'account_region' => env('RIOT_ACCOUNT_REGION', 'asia'),
+        // Servers the admin page lets you pick when adding a friend. They all share the
+        // `sea` / `asia` routing above (match-v5 / account-v1); other regions would need other routing.
+        'platforms' => [
+            'sg2' => 'Singapore (SG2)',
+            'ph2' => 'Filipina (PH2)',
+            'th2' => 'Thailand (TH2)',
+            'tw2' => 'Taiwan (TW2)',
+            'vn2' => 'Vietnam (VN2)',
+        ],
         'rate_limits' => [
             'per_second' => 20,
             'per_two_minutes' => 100,
         ],
+        // Game modes whose matches are fetched, stored and shown (match-v5 queue ids):
+        // 420 Solo/Duo, 440 Flex, 400 Normal Draft, 450 ARAM, 2400 ARAM Mayhem.
+        // Add 480 for Swiftplay. Every mode costs one extra request per player per sync.
+        'tracked_queues' => [420, 440, 400, 450, 2400],
     ],
 
     /*

@@ -2,7 +2,7 @@
 
 namespace App\Services\Discord;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Events\RankChanged;
 use App\Models\GameMatch;
 use App\Models\MatchParticipant;
@@ -54,7 +54,7 @@ final class DiscordMessages
         $wins = $participants->where('win', true)->count();
         $allWon = $wins === $participants->count();
         $allLost = $wins === 0;
-        $queue = RankedQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}";
+        $queue = MatchQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}";
 
         [$title, $color] = match (true) {
             $allWon => ['✅ Menang', self::GREEN],
@@ -79,7 +79,7 @@ final class DiscordMessages
     {
         return $this->embed([
             'title' => "🔥 Win streak {$streak}!",
-            'description' => "**{$this->escape($player->name)}** menang {$streak} game ranked berturut-turut.",
+            'description' => "**{$this->escape($player->name)}** menang {$streak} game berturut-turut.",
             'color' => self::AMBER,
             'url' => $this->siteUrl('players.show', ['player' => $player->id]),
         ]);

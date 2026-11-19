@@ -2,7 +2,7 @@
 
 namespace App\Services\Stats;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Models\GameMatch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
@@ -29,7 +29,7 @@ final class PairStats
      * @param  list<int>  $playerIds
      * @return list<array{a: int, b: int, together: array<string, int|float|null>, versus: array<string, int|float|null>}>
      */
-    public function among(array $playerIds, ?RankedQueue $queue = null): array
+    public function among(array $playerIds, ?MatchQueue $queue = null): array
     {
         $ids = collect($playerIds)->map(fn ($id) => (int) $id)->unique()->sort()->values()->all();
 
@@ -67,7 +67,7 @@ final class PairStats
      *
      * @return list<array{player_id: int, together: array<string, int|float|null>, versus: array<string, int|float|null>}>
      */
-    public function forPlayer(int $playerId, ?RankedQueue $queue = null): array
+    public function forPlayer(int $playerId, ?MatchQueue $queue = null): array
     {
         $scope = fn (Builder $query) => $query
             ->where('a.player_id', $playerId)
@@ -100,7 +100,7 @@ final class PairStats
      *
      * @return Collection<string, object{games: int, wins: int}>
      */
-    private function aggregate(bool $sameTeam, callable $scope, ?RankedQueue $queue): Collection
+    private function aggregate(bool $sameTeam, callable $scope, ?MatchQueue $queue): Collection
     {
         $query = DB::table('match_participants as a')
             ->join('match_participants as b', 'a.match_id', '=', 'b.match_id')

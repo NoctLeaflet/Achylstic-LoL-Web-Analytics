@@ -23,6 +23,7 @@ class TeamStatsPagesTest extends TestCase
 
         $this->withoutVite();
         Cache::put('ddragon.version', '16.1.1');
+        Cache::put('ddragon.champions.16.1.1', []);   // champion images by id; empty = fall back to names
         Http::fake();
         $this->freezeTime();
     }
@@ -114,8 +115,12 @@ class TeamStatsPagesTest extends TestCase
 
         $this->addTeamGame([$a, $b], [], blueWins: true, queueId: 440);
 
-        $solo = $this->get("/compare?players={$a->id},{$b->id}")->assertOk();
+        $solo = $this->get("/compare?players={$a->id},{$b->id}&queue=solo")->assertOk();
         $this->assertSame(0, $solo->viewData('pairs')[0]['together']['games']);
+
+        // No queue given means every tracked game mode together.
+        $all = $this->get("/compare?players={$a->id},{$b->id}")->assertOk();
+        $this->assertSame(1, $all->viewData('pairs')[0]['together']['games']);
 
         $flex = $this->get("/compare?players={$a->id},{$b->id}&queue=flex")->assertOk();
         $this->assertSame(1, $flex->viewData('pairs')[0]['together']['games']);
@@ -159,8 +164,9 @@ class TeamStatsPagesTest extends TestCase
         $b = $this->makePlayer('Beta');
         $this->addTeamGame([$a, $b], [], blueWins: true, queueId: 440);
 
-        $this->get("/players/{$a->id}")->assertOk()->assertDontSee('Main bareng teman');
+        $this->get("/players/{$a->id}?queue=solo")->assertOk()->assertDontSee('Main bareng teman');
         $this->get("/players/{$a->id}?queue=flex")->assertOk()->assertSee('Main bareng teman');
+        $this->get("/players/{$a->id}")->assertOk()->assertSee('Main bareng teman');   // all modes
     }
 
     public function test_the_new_sections_only_read_the_database(): void

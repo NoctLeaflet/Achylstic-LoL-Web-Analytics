@@ -26,6 +26,15 @@ class ScheduleTest extends TestCase
         $this->assertTrue($event->withoutOverlapping);
     }
 
+    public function test_missing_timelines_are_caught_up_twice_an_hour_without_overlapping(): void
+    {
+        $event = $this->scheduledEvent('riot:sync-timelines');
+
+        $this->assertNotNull($event);
+        $this->assertSame('15,45 * * * *', $event->expression);
+        $this->assertTrue($event->withoutOverlapping);
+    }
+
     public function test_matches_are_synced_every_thirty_minutes_without_overlapping(): void
     {
         $event = $this->scheduledEvent('riot:sync-matches');

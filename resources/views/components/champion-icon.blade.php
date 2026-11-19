@@ -1,7 +1,7 @@
-@props(['name', 'size' => 'size-10'])
+@props(['name', 'id' => null, 'size' => 'size-10'])
 
 @php
-    $url = app(\App\Services\Riot\DataDragonService::class)->championIcon($name);
+    $url = app(\App\Services\Riot\DataDragonService::class)->championIcon($name, $id);
 @endphp
 
 @if ($url)

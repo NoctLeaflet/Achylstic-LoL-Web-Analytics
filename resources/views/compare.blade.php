@@ -6,10 +6,10 @@
     <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
             <h1 class="text-2xl font-semibold tracking-tight text-white">Compare</h1>
-            <p class="mt-1 text-sm text-slate-400">Pilih {{ $min }} sampai {{ $max }} pemain. Data Ranked {{ $queue->label() }}.</p>
+            <p class="mt-1 text-sm text-slate-400">Pilih {{ $min }} sampai {{ $max }} pemain. Data: {{ $queueLabel }}.</p>
         </div>
 
-        <x-queue-toggle :queue="$queue" />
+        <x-queue-toggle :queue="$queue" :options="$queueOptions" all />
     </div>
 
     {{-- Player picker. Submits as /compare?players=1,2,3&queue=solo --}}
@@ -21,7 +21,7 @@
         <form method="GET" action="{{ route('compare') }}"
               x-data="{ selected: @js($selectedIds), max: {{ $max }}, min: {{ $min }} }"
               class="mt-5 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-            <input type="hidden" name="queue" value="{{ $queue->slug() }}">
+            <input type="hidden" name="queue" value="{{ $queueParam }}">
             <input type="hidden" name="players" :value="selected.join(',')">
 
             <fieldset>
@@ -64,16 +64,18 @@
             </p>
         @endif
     @else
-        {{-- LP over time --}}
+        {{-- LP over time (only Solo/Duo and Flex have LP) --}}
         <section class="mt-6" aria-labelledby="lp-heading">
             <h2 id="lp-heading" class="mb-3 text-lg font-semibold text-white">LP dari waktu ke waktu</h2>
             <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-                @if (collect($lpChart['datasets'])->contains(fn ($dataset) => count($dataset['points']) > 0))
+                @if ($lpChart === null)
+                    <p class="py-8 text-center text-sm text-slate-500">Grafik LP hanya ada untuk Solo/Duo dan Flex. Pilih salah satunya di atas untuk melihatnya.</p>
+                @elseif (collect($lpChart['datasets'])->contains(fn ($dataset) => count($dataset['points']) > 0))
                     <div x-data="lpChart(@js($lpChart))" class="relative h-72 sm:h-96">
                         <canvas x-ref="canvas" role="img" aria-label="Grafik LP semua pemain yang dibandingkan"></canvas>
                     </div>
                 @else
-                    <p class="py-10 text-center text-sm text-slate-500">Belum ada snapshot LP untuk {{ $queue->label() }}.</p>
+                    <p class="py-10 text-center text-sm text-slate-500">Belum ada snapshot LP untuk {{ $rankQueue->label() }}.</p>
                 @endif
             </div>
         </section>
@@ -107,7 +109,7 @@
                             <tr class="border-b border-slate-800/70 last:border-0">
                                 <th scope="row" class="whitespace-nowrap px-4 py-3 font-medium text-white">
                                     <span class="mr-2 inline-block size-2.5 rounded-full" style="background-color: {{ $colors[$comparePlayer->id] ?? '#94a3b8' }}" aria-hidden="true"></span>
-                                    <a href="{{ route('players.show', ['player' => $comparePlayer, 'queue' => $queue->slug()]) }}" class="hover:text-sky-300">{{ $comparePlayer->name }}</a>
+                                    <a href="{{ route('players.show', ['player' => $comparePlayer, 'queue' => $queueParam]) }}" class="hover:text-sky-300">{{ $comparePlayer->name }}</a>
                                 </th>
                                 <td class="px-2 py-3 text-right tabular-nums text-slate-400">{{ $row['games'] }}</td>
                                 @foreach ($metrics as $key => $label)

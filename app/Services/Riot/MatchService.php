@@ -2,10 +2,12 @@
 
 namespace App\Services\Riot;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Events\MatchRecorded;
 use App\Models\GameMatch;
 use App\Models\Player;
+use App\Services\Riot\Exceptions\RiotApiException;
+use App\Services\Riot\Exceptions\RiotAuthException;
 use Carbon\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +21,10 @@ use Illuminate\Support\Facades\Log;
  */
 class MatchService
 {
-    public function __construct(private readonly RiotClient $riot) {}
+    public function __construct(
+        private readonly RiotClient $riot,
+        private readonly TimelineParser $timelines,
+    ) {}
 
     /**
      * Most recent match ids of a player, newest first.
@@ -48,8 +53,49 @@ class MatchService
     }
 
     /**
-     * Fetch and store the new ranked matches (solo and flex) of one player.
-     * $count applies to each queue separately.
+     * @return array<string, mixed>|null raw match-v5 timeline, null when Riot does not have it
+     */
+    public function fetchTimeline(string $matchId): ?array
+    {
+        return $this->riot->region('/lol/match/v5/matches/'.rawurlencode($matchId).'/timeline');
+    }
+
+    /**
+     * Fetch the timeline of a stored match and keep the item purchases and skill
+     * order of every participant. A match Riot has no timeline for is marked as
+     * fetched too, so it is not asked for again.
+     *
+     * @return bool whether build data was stored
+     */
+    public function syncTimeline(GameMatch $match): bool
+    {
+        return $this->storeTimeline($match, $this->fetchTimeline($match->match_id));
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $timeline  raw timeline, null = not available
+     * @return bool whether build data was stored
+     */
+    public function storeTimeline(GameMatch $match, ?array $timeline): bool
+    {
+        $builds = $timeline === null ? [] : $this->timelines->parse($timeline);
+
+        DB::transaction(function () use ($match, $builds) {
+            foreach ($match->participants()->get() as $participant) {
+                if (isset($builds[$participant->puuid])) {
+                    $participant->update($builds[$participant->puuid]);
+                }
+            }
+
+            $match->update(['timeline_fetched_at' => now()]);
+        });
+
+        return $builds !== [];
+    }
+
+    /**
+     * Fetch and store the new matches of one player in every tracked game mode
+     * (see MatchQueue::tracked()). $count applies to each mode separately.
      *
      * @return int number of matches stored
      */
@@ -58,7 +104,7 @@ class MatchService
         $stored = 0;
         $playerIdsByPuuid = Player::pluck('id', 'puuid')->all();
 
-        foreach (RankedQueue::cases() as $queue) {
+        foreach (MatchQueue::tracked() as $queue) {
             $ids = $this->fetchMatchIds($player->puuid, $count, $queue->queueId());
 
             if ($ids === []) {
@@ -71,14 +117,38 @@ class MatchService
             // notifications and win streaks follow the order the games were played.
             foreach (array_reverse(array_values(array_diff($ids, $known))) as $matchId) {
                 $payload = $this->fetchMatch($matchId);
+                $match = $payload === null ? null : $this->store($payload, $playerIdsByPuuid);
 
-                if ($payload !== null && $this->store($payload, $playerIdsByPuuid) !== null) {
-                    $stored++;
+                if ($match === null) {
+                    continue;
                 }
+
+                $stored++;
+                $this->fetchTimelineQuietly($match);
             }
         }
 
         return $stored;
+    }
+
+    /**
+     * Best-effort timeline for a match that was just stored, so builds are there
+     * right away. A hiccup is only logged: riot:sync-timelines picks the match up
+     * later. An expired key still stops the sync.
+     */
+    private function fetchTimelineQuietly(GameMatch $match): void
+    {
+        if ($match->isRemake()) {
+            return;
+        }
+
+        try {
+            $this->syncTimeline($match);
+        } catch (RiotAuthException $e) {
+            throw $e;
+        } catch (RiotApiException $e) {
+            Log::warning('Could not fetch the match timeline, will retry later', ['match_id' => $match->match_id, 'status' => $e->status]);
+        }
     }
 
     /**

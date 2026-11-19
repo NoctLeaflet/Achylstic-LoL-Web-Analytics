@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Models\Player;
 use App\Services\Stats\ComparisonBuilder;
 use App\Services\Stats\ComparisonSelection;
@@ -24,7 +24,9 @@ class CompareController extends Controller
         PlayerPalette $palette,
         PairStats $pairStats,
     ): View {
-        $queue = RankedQueue::fromSlug($request->query('queue'));
+        // Null = every tracked game mode together. Only Solo/Duo and Flex have an LP chart.
+        $queue = MatchQueue::fromSlug($request->query('queue'));
+        $rankQueue = $queue?->ranked();
 
         $requested = $selection->players($request->query('players'));
         $players = $requested->take(ComparisonSelection::MAX);
@@ -32,6 +34,10 @@ class CompareController extends Controller
 
         $data = [
             'queue' => $queue,
+            'queueLabel' => $queue?->label() ?? 'Semua mode',
+            'queueParam' => $queue?->slug() ?? 'all',
+            'queueOptions' => MatchQueue::tracked(),
+            'rankQueue' => $rankQueue,
             'available' => $available,
             'colors' => $available->mapWithKeys(fn (Player $player) => [$player->id => $palette->colorFor($player->id)])->all(),
             'selectedIds' => $players->pluck('id')->all(),
@@ -51,7 +57,7 @@ class CompareController extends Controller
         return view('compare', $data + [
             'stats' => $statsByPlayer,
             'metrics' => ComparisonBuilder::METRICS,
-            'lpChart' => $lpHistory->chartData($players, $queue),
+            'lpChart' => $rankQueue ? $lpHistory->chartData($players, $rankQueue) : null,
             'radar' => $comparison->radar($players, $statsByPlayer),
             'bars' => $comparison->bars($players, $statsByPlayer),
             'pairs' => $pairStats->among($players->pluck('id')->all(), $queue),

@@ -137,7 +137,7 @@ class DiscordMessagesTest extends TestCase
         $embed = $this->messages()->winStreak($player, 5);
 
         $this->assertSame('🔥 Win streak 5!', $embed['title']);
-        $this->assertSame('**Ayam** menang 5 game ranked berturut-turut.', $embed['description']);
+        $this->assertSame('**Ayam** menang 5 game berturut-turut.', $embed['description']);
         $this->assertSame(0xF59E0B, $embed['color']);
     }
 

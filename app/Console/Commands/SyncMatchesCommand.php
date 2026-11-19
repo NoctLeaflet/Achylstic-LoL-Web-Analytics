@@ -10,8 +10,8 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('riot:sync-matches {--count=20 : Number of recent match ids to request per player and ranked queue (1-100)}')]
-#[Description('Fetch new ranked matches of every active player; details are only fetched for matches not stored yet')]
+#[Signature('riot:sync-matches {--count=20 : Number of recent match ids to request per player and game mode (1-100)}')]
+#[Description('Fetch new matches (ranked, normal, ARAM...) of every active player; details are only fetched for matches not stored yet')]
 class SyncMatchesCommand extends Command
 {
     public function handle(MatchService $matches): int

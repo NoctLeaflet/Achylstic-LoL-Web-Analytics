@@ -2,7 +2,7 @@
 
 namespace App\Services\Stats;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Models\GameMatch;
 use App\Models\MatchParticipant;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class PerformanceStats
 {
+    public function __construct(private readonly MatchScore $scores) {}
+
     /** Stats of a player without any counted game. */
     private const EMPTY = [
         'games' => 0,
@@ -41,7 +43,7 @@ final class PerformanceStats
     /**
      * @return array<string, int|float>
      */
-    public function forPlayer(int $playerId, ?RankedQueue $queue = null): array
+    public function forPlayer(int $playerId, ?MatchQueue $queue = null): array
     {
         return $this->forPlayers([$playerId], $queue)[$playerId];
     }
@@ -53,7 +55,7 @@ final class PerformanceStats
      * @param  list<int>  $playerIds
      * @return array<int, array<string, int|float>> keyed by player id
      */
-    public function forPlayers(array $playerIds, ?RankedQueue $queue = null): array
+    public function forPlayers(array $playerIds, ?MatchQueue $queue = null): array
     {
         if ($playerIds === []) {
             return [];
@@ -92,7 +94,7 @@ final class PerformanceStats
      *
      * @return list<array{champion_id: int, champion_name: string, games: int, wins: int, winrate: float, kda: float}>
      */
-    public function topChampions(int $playerId, ?RankedQueue $queue = null, int $limit = 5): array
+    public function topChampions(int $playerId, ?MatchQueue $queue = null, int $limit = 5): array
     {
         return $this->countedGames($queue)
             ->where('match_participants.player_id', $playerId)
@@ -129,9 +131,9 @@ final class PerformanceStats
      *
      * @return list<array<string, mixed>>
      */
-    public function recentMatches(int $playerId, ?RankedQueue $queue = null, int $limit = 20): array
+    public function recentMatches(int $playerId, ?MatchQueue $queue = null, int $limit = 20): array
     {
-        return MatchParticipant::query()
+        $rows = MatchParticipant::query()
             ->join('matches', 'matches.id', '=', 'match_participants.match_id')
             ->where('match_participants.player_id', $playerId)
             ->when($queue !== null, fn (Builder $query) => $query->where('matches.queue_id', $queue->queueId()))
@@ -140,8 +142,13 @@ final class PerformanceStats
             ->limit($limit)
             ->select('match_participants.*')
             ->with('gameMatch')
-            ->get()
-            ->map(function (MatchParticipant $p) {
+            ->get();
+
+        // Scores compare a player with the other nine of the same match, so they need every participant.
+        $scores = $this->scores->forMatches($rows->pluck('match_id')->unique()->values()->all());
+
+        return $rows
+            ->map(function (MatchParticipant $p) use ($scores) {
                 $match = $p->gameMatch;
                 $cs = $p->total_minions_killed + $p->neutral_minions_killed;
                 $minutes = $match->game_duration / 60;
@@ -149,7 +156,7 @@ final class PerformanceStats
                 return [
                     'id' => $match->id,
                     'match_id' => $match->match_id,
-                    'queue' => RankedQueue::fromQueueId($match->queue_id)?->label(),
+                    'queue' => MatchQueue::fromQueueId($match->queue_id)?->label(),
                     'started_at' => $match->game_start_at,
                     'duration' => $match->game_duration,
                     'is_remake' => $match->isRemake(),
@@ -166,13 +173,15 @@ final class PerformanceStats
                     'damage' => $p->total_damage_dealt_to_champions,
                     'vision' => $p->vision_score,
                     'items' => $p->items ?? [],
+                    'score' => $scores[$p->id]['score'] ?? null,
+                    'badge' => $scores[$p->id]['badge'] ?? null,
                 ];
             })
             ->all();
     }
 
     /** Participations joined with their match, remakes excluded, optionally for one queue. */
-    private function countedGames(?RankedQueue $queue): Builder
+    private function countedGames(?MatchQueue $queue): Builder
     {
         return MatchParticipant::query()
             ->join('matches', 'matches.id', '=', 'match_participants.match_id')

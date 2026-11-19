@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Services\Stats\PairStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\BuildsGames;
@@ -74,8 +74,8 @@ class PairStatsTest extends TestCase
         $this->addTeamGame([$a, $b], [], blueWins: false, queueId: 440);
 
         $this->assertSame(2, $this->stats()->among([$a->id, $b->id])[0]['together']['games']);
-        $this->assertSame(1, $this->stats()->among([$a->id, $b->id], RankedQueue::Solo)[0]['together']['games']);
-        $this->assertSame(0.0, $this->stats()->among([$a->id, $b->id], RankedQueue::Flex)[0]['together']['winrate']);
+        $this->assertSame(1, $this->stats()->among([$a->id, $b->id], MatchQueue::Solo)[0]['together']['games']);
+        $this->assertSame(0.0, $this->stats()->among([$a->id, $b->id], MatchQueue::Flex)[0]['together']['winrate']);
     }
 
     public function test_every_pair_of_three_players_is_listed_once_with_the_lower_id_first(): void

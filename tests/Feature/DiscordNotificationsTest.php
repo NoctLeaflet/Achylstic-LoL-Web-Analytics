@@ -193,7 +193,7 @@ class DiscordNotificationsTest extends TestCase
         $embeds = $this->discordMessages()[0]['embeds'];
         $this->assertCount(2, $embeds);
         $this->assertSame('🔥 Win streak 3!', $embeds[1]['title']);
-        $this->assertSame('**Ayam** menang 3 game ranked berturut-turut.', $embeds[1]['description']);
+        $this->assertSame('**Ayam** menang 3 game berturut-turut.', $embeds[1]['description']);
     }
 
     public function test_a_win_that_is_not_a_milestone_adds_nothing(): void

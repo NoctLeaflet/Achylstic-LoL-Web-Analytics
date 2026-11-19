@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'game_mode',
     'game_duration',
     'game_start_at',
+    'timeline_fetched_at',
 ])]
 class GameMatch extends Model
 {
@@ -34,6 +35,7 @@ class GameMatch extends Model
             'queue_id' => 'integer',
             'game_duration' => 'integer',
             'game_start_at' => 'datetime',
+            'timeline_fetched_at' => 'datetime',
         ];
     }
 

@@ -23,6 +23,10 @@ class MatchPageTest extends TestCase
 
         $this->withoutVite();
         Cache::put('ddragon.version', '16.1.1');
+        Cache::put('ddragon.champions.16.1.1', []);   // champion images by id; empty = fall back to names
+        // Item and rune data of the build panels come from Data Dragon and are cached; empty = "already looked up".
+        Cache::put('ddragon.items.16.1.1', []);
+        Cache::put('ddragon.runes.16.1.1', []);
         Http::fake();
     }
 

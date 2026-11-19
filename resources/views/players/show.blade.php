@@ -3,7 +3,7 @@
 @section('title', $player->name.' · '.config('app.name'))
 
 @section('content')
-    <a href="{{ route('leaderboard', ['queue' => $queue->slug()]) }}" class="text-sm text-slate-400 hover:text-slate-200">&larr; Leaderboard</a>
+    <x-back-link :fallback="route('leaderboard', ['queue' => $headerQueue->slug()])" />
 
     {{-- Header --}}
     <div class="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
@@ -29,26 +29,34 @@
                         {{ $current->league_points }} LP
                         <span class="text-slate-500">· {{ $current->wins }}M {{ $current->losses }}K</span>
                     </p>
+                    {{-- Only Solo/Duo and Flex have a rank; other game modes show the Solo/Duo one. --}}
+                    <p class="text-xs text-slate-500">{{ $headerQueue->label() }}</p>
                 </div>
             @else
-                <span class="text-sm text-slate-500">Unranked di {{ $queue->label() }}</span>
+                <span class="text-sm text-slate-500">Unranked di {{ $headerQueue->label() }}</span>
             @endif
+        </div>
 
-            <x-queue-toggle :queue="$queue" />
+        <div class="w-full">
+            <x-queue-toggle :queue="$queue" :options="$queueOptions" all />
         </div>
     </div>
 
-    {{-- LP over time --}}
+    {{-- LP over time (only Solo/Duo and Flex have LP) --}}
     <section class="mt-6" aria-labelledby="lp-heading">
         <h2 id="lp-heading" class="mb-3 text-lg font-semibold text-white">LP dari waktu ke waktu</h2>
         <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-            @if (count($lpChart['datasets'][0]['points']) > 0)
+            @if ($lpChart === null)
+                <p class="py-8 text-center text-sm text-slate-500">
+                    Grafik LP hanya ada untuk Solo/Duo dan Flex. Pilih salah satunya di atas untuk melihatnya.
+                </p>
+            @elseif (count($lpChart['datasets'][0]['points']) > 0)
                 <div x-data="lpChart(@js($lpChart))" class="relative h-64 sm:h-80">
                     <canvas x-ref="canvas" role="img" aria-label="Grafik LP {{ $player->name }}"></canvas>
                 </div>
             @else
                 <p class="py-10 text-center text-sm text-slate-500">
-                    Belum ada snapshot LP untuk {{ $queue->label() }}. Jalankan <code class="text-sky-300">php artisan riot:sync-ranks</code>.
+                    Belum ada snapshot LP untuk {{ $rankQueue->label() }}. Jalankan <code class="text-sky-300">php artisan riot:sync-ranks</code>.
                 </p>
             @endif
         </div>
@@ -60,7 +68,7 @@
 
         @if ($stats['games'] === 0)
             <p class="rounded-xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
-                Belum ada match {{ $queue->label() }} yang tersimpan. Jalankan <code class="text-sky-300">php artisan riot:sync-matches</code>.
+                Belum ada match{{ $queue ? ' '.$queue->label() : '' }} yang tersimpan. Jalankan <code class="text-sky-300">php artisan riot:sync-matches</code>.
             </p>
         @else
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -106,7 +114,7 @@
             <ul class="divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
                 @foreach ($topChampions as $champion)
                     <li class="flex items-center gap-3 px-4 py-3">
-                        <x-champion-icon :name="$champion['champion_name']" />
+                        <x-champion-icon :name="$champion['champion_name']" :id="$champion['champion_id']" />
                         <div class="min-w-0 flex-1">
                             <p class="truncate font-medium text-white">{{ $champion['champion_name'] }}</p>
                             <p class="text-xs tabular-nums text-slate-400">{{ $champion['games'] }} game · {{ $champion['wins'] }}M {{ $champion['games'] - $champion['wins'] }}K</p>
@@ -140,7 +148,7 @@
                             $friend = $partnerPlayers[$partner['player_id']];
                         @endphp
                         <li class="grid gap-2 px-4 py-3 sm:grid-cols-3 sm:items-center sm:gap-4">
-                            <a href="{{ route('players.show', ['player' => $friend, 'queue' => $queue->slug()]) }}" class="flex items-center gap-3 font-medium text-white hover:text-sky-300">
+                            <a href="{{ route('players.show', ['player' => $friend, 'queue' => $queueParam]) }}" class="flex items-center gap-3 font-medium text-white hover:text-sky-300">
                                 <x-profile-icon :player="$friend" size="size-8" />
                                 {{ $friend->name }}
                             </a>
@@ -178,7 +186,7 @@
                     ])>
                         {{-- Stretched link: the whole row opens the match detail. --}}
                         <a href="{{ route('matches.show', $match['match_id']) }}" class="absolute inset-0 rounded-xl" aria-label="Detail match {{ $match['champion_name'] }}, {{ $match['kills'] }}/{{ $match['deaths'] }}/{{ $match['assists'] }}"></a>
-                        <x-champion-icon :name="$match['champion_name']" />
+                        <x-champion-icon :name="$match['champion_name']" :id="$match['champion_id']" />
 
                         <div class="w-20 shrink-0 text-xs sm:w-28">
                             <p @class([
@@ -189,6 +197,14 @@
                             ])>{{ $match['is_remake'] ? 'Remake' : ($match['win'] ? 'Menang' : 'Kalah') }}</p>
                             <p class="text-slate-500">{{ $match['queue'] }}</p>
                             <p class="text-slate-500">{{ $match['started_at']->diffForHumans() }}</p>
+                            @if ($match['score'] !== null && ! $match['is_remake'])
+                                <p class="mt-0.5 flex flex-wrap items-center gap-1 text-slate-400">
+                                    Skor <span class="font-semibold tabular-nums text-slate-200">{{ $match['score'] }}</span>
+                                    @if ($match['badge'])
+                                        <x-score-badge :badge="$match['badge']" />
+                                    @endif
+                                </p>
+                            @endif
                         </div>
 
                         <div class="min-w-0 flex-1 tabular-nums">
@@ -205,6 +221,17 @@
                             {{ \App\Support\Format::duration($match['duration']) }}
                         </div>
 
+                        {{-- Opens the match with the radar pop-up on this player's lane (above the stretched row link). --}}
+                        @if ($match['position'] && ! $match['is_remake'])
+                            <a href="{{ route('matches.show', ['gameMatch' => $match['match_id'], 'vs' => $match['position']]) }}"
+                               title="Compare dengan lawan lane"
+                               aria-label="Compare lane {{ $match['champion_name'] }} di match ini"
+                               class="relative z-10 inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-700 px-1.5 py-1 text-xs font-medium text-slate-300 transition hover:border-sky-500 hover:text-sky-300">
+                                <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l7 4v8l-7 4-7-4V6z" /><path d="M10 6l3.5 2v4L10 14l-3.5-2V8z" /></svg>
+                                <span class="hidden sm:inline">Compare</span>
+                            </a>
+                        @endif
+
                         <div class="hidden gap-0.5 lg:flex" aria-hidden="true">
                             @foreach ($match['items'] as $itemId)
                                 <x-item-icon :id="$itemId" />
@@ -217,7 +244,7 @@
     </section>
 
     <div class="mt-8 text-center">
-        <a href="{{ route('compare', ['players' => $player->id, 'queue' => $queue->slug()]) }}"
+        <a href="{{ route('compare', ['players' => $player->id, 'queue' => $queueParam]) }}"
            class="inline-block rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:border-sky-500 hover:text-sky-300">
             Bandingkan dengan pemain lain
         </a>

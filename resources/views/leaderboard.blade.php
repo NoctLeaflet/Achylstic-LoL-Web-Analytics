@@ -32,8 +32,14 @@
     @if (count($rows) === 0)
         <div class="mt-6 rounded-xl border border-dashed border-slate-700 p-8 text-center">
             <p class="font-medium text-white">Belum ada pemain.</p>
-            <p class="mt-2 text-sm text-slate-400">Tambahkan pemain lewat terminal:</p>
-            <code class="mt-3 inline-block rounded-md bg-slate-900 px-3 py-2 text-sm text-sky-300">php artisan players:add GameName TAG --name=Nama</code>
+            @auth('admin')
+                <p class="mt-2 text-sm text-slate-400">Tambahkan teman lewat halaman admin.</p>
+                <a href="{{ route('admin.dashboard') }}"
+                   class="mt-3 inline-block rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400">Buka admin</a>
+            @else
+                <p class="mt-2 text-sm text-slate-400">Admin bisa menambahkan teman lewat tombol Login Admin, atau lewat terminal:</p>
+                <code class="mt-3 inline-block rounded-md bg-slate-900 px-3 py-2 text-sm text-sky-300">php artisan players:add GameName TAG --name=Nama</code>
+            @endauth
         </div>
     @else
         <div class="mt-5 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">

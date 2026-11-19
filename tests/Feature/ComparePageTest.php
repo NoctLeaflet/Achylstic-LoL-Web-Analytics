@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MatchQueue;
 use App\Enums\RankedQueue;
 use App\Services\Stats\PlayerPalette;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,7 +64,7 @@ class ComparePageTest extends TestCase
         $this->addGame($a, ['kills' => 10, 'deaths' => 2, 'assists' => 8]);
         $this->addGame($b, ['kills' => 4, 'deaths' => 4, 'assists' => 4]);
 
-        $response = $this->get("/compare?players={$a->id},{$b->id}")->assertOk();
+        $response = $this->get("/compare?players={$a->id},{$b->id}&queue=solo")->assertOk();
 
         $this->assertTrue($response->viewData('ready'));
         $response->assertSee('x-data="lpChart(', false);
@@ -112,7 +113,7 @@ class ComparePageTest extends TestCase
         $a = $this->makePlayer('Alpha');
         $b = $this->makePlayer('Beta');
 
-        $response = $this->get("/compare?players={$a->id},{$b->id}")->assertOk();
+        $response = $this->get("/compare?players={$a->id},{$b->id}&queue=solo")->assertOk();
 
         $expected = [PlayerPalette::COLORS[0], PlayerPalette::COLORS[1]];
 
@@ -131,7 +132,7 @@ class ComparePageTest extends TestCase
 
         $response = $this->get("/compare?players={$a->id},{$b->id}&queue=flex")->assertOk();
 
-        $this->assertSame(RankedQueue::Flex, $response->viewData('queue'));
+        $this->assertSame(MatchQueue::Flex, $response->viewData('queue'));
         $this->assertSame(0, $response->viewData('stats')[$a->id]['games']);
         $this->assertSame(1, $response->viewData('stats')[$b->id]['games']);
         $response->assertSee('name="queue" value="flex"', false);
@@ -142,7 +143,7 @@ class ComparePageTest extends TestCase
         $a = $this->makePlayer('Alpha');
         $b = $this->makePlayer('Beta');
 
-        $this->get("/compare?players={$a->id},{$b->id}")
+        $this->get("/compare?players={$a->id},{$b->id}&queue=solo")
             ->assertOk()
             ->assertSee('Belum ada snapshot LP')
             ->assertSee('x-data="radarChart(', false);

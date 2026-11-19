@@ -99,4 +99,60 @@ final class RiotFixtures
             'summonerLevel' => 123,
         ], $overrides);
     }
+
+    /**
+     * A match-v5 timeline. Participant ids 1-10 get the given puuids (the rest are
+     * generated like RiotFixtures::match() does). metadata.participants is listed in
+     * REVERSE order on purpose: the real API does not list it by participantId.
+     *
+     * @param  array<int, string>  $puuids  puuid per participant index (0 = participantId 1)
+     * @param  list<array<string, mixed>>  $events  see purchase(), undo(), skill()
+     * @return array<string, mixed>
+     */
+    public static function timeline(string $matchId = 'SG2_1001', array $puuids = [], array $events = []): array
+    {
+        $participants = [];
+        $allPuuids = [];
+
+        for ($i = 0; $i < 10; $i++) {
+            $puuid = $puuids[$i] ?? "puuid-{$matchId}-{$i}";
+            $allPuuids[] = $puuid;
+            $participants[] = ['participantId' => $i + 1, 'puuid' => $puuid];
+        }
+
+        $frames = [];
+        foreach ($events as $event) {
+            $minute = intdiv((int) $event['timestamp'], 60000);
+            $frames[$minute]['events'][] = $event;
+        }
+        ksort($frames);
+
+        return [
+            'metadata' => ['dataVersion' => '2', 'matchId' => $matchId, 'participants' => array_reverse($allPuuids)],
+            'info' => [
+                'frameInterval' => 60000,
+                'gameId' => 1001,
+                'participants' => $participants,
+                'frames' => array_values(array_map(fn (array $frame) => $frame + ['timestamp' => 0], $frames)),
+            ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function purchase(int $participantId, int $itemId, int $seconds): array
+    {
+        return ['type' => 'ITEM_PURCHASED', 'participantId' => $participantId, 'itemId' => $itemId, 'timestamp' => $seconds * 1000];
+    }
+
+    /** @return array<string, mixed> */
+    public static function undo(int $participantId, int $itemId, int $seconds): array
+    {
+        return ['type' => 'ITEM_UNDO', 'participantId' => $participantId, 'beforeId' => $itemId, 'afterId' => 0, 'goldGain' => 450, 'timestamp' => $seconds * 1000];
+    }
+
+    /** @return array<string, mixed> */
+    public static function skill(int $participantId, int $slot, int $seconds, string $type = 'NORMAL'): array
+    {
+        return ['type' => 'SKILL_LEVEL_UP', 'participantId' => $participantId, 'skillSlot' => $slot, 'levelUpType' => $type, 'timestamp' => $seconds * 1000];
+    }
 }

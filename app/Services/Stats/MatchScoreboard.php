@@ -2,7 +2,7 @@
 
 namespace App\Services\Stats;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Models\GameMatch;
 use App\Models\MatchParticipant;
 
@@ -12,7 +12,9 @@ use App\Models\MatchParticipant;
  *
  * Participants are listed in lane order (top, jungle, mid, bottom, support).
  * "damage_share" is the share of the team's total damage to champions, which
- * the page draws as a small bar.
+ * the page draws as a small bar. Every participant also carries the performance
+ * score with its MVP/ACE badge (MatchScore) and the data of the build panel
+ * that opens when the player is clicked (ParticipantBuild).
  */
 final class MatchScoreboard
 {
@@ -20,9 +22,16 @@ final class MatchScoreboard
 
     private const POSITION_ORDER = ['TOP' => 0, 'JUNGLE' => 1, 'MIDDLE' => 2, 'BOTTOM' => 3, 'UTILITY' => 4];
 
+    public function __construct(
+        private readonly MatchScore $scores,
+        private readonly ParticipantBuild $builds,
+        private readonly LaneMatchups $lanes,
+    ) {}
+
     /**
      * @return array{
      *     match: array<string, mixed>,
+     *     mvp: array<string, mixed>|null,
      *     teams: list<array{team_id: int, name: string, win: bool, kills: int, deaths: int, assists: int, gold: int, damage: int, participants: list<array<string, mixed>>}>
      * }
      */
@@ -30,11 +39,12 @@ final class MatchScoreboard
     {
         $participants = $match->participants()->with('player')->get();
         $minutes = max($match->game_duration, 1) / 60;
+        $scores = $this->scores->forMatch($participants, $match->game_duration);
 
         $teams = $participants
             ->groupBy('team_id')
             ->sortKeys()
-            ->map(function ($members, $teamId) use ($minutes) {
+            ->map(function ($members, $teamId) use ($minutes, $scores) {
                 $members = $members->sortBy(fn (MatchParticipant $p) => [self::POSITION_ORDER[$p->team_position] ?? 9, $p->id])->values();
                 $teamDamage = max((int) $members->sum('total_damage_dealt_to_champions'), 1);
 
@@ -47,16 +57,21 @@ final class MatchScoreboard
                     'assists' => (int) $members->sum('assists'),
                     'gold' => (int) $members->sum('gold_earned'),
                     'damage' => (int) $members->sum('total_damage_dealt_to_champions'),
-                    'participants' => $members->map(fn (MatchParticipant $p) => $this->participant($p, $minutes, $teamDamage))->all(),
+                    'participants' => $members->map(fn (MatchParticipant $p) => $this->participant($p, $minutes, $teamDamage, $scores[$p->id]))->all(),
                 ];
             })
             ->values()
             ->all();
 
+        $mvp = collect($teams)->pluck('participants')->flatten(1)->firstWhere('badge', MatchScore::MVP);
+
         return [
+            'mvp' => $mvp,
+            // Lane against lane for the radar pop-up (empty for ARAM and remakes).
+            'matchups' => $this->lanes->build($teams, $match->game_duration),
             'match' => [
                 'match_id' => $match->match_id,
-                'queue' => RankedQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}",
+                'queue' => MatchQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}",
                 'mode' => $match->game_mode,
                 'version' => $match->game_version,
                 'duration' => $match->game_duration,
@@ -68,13 +83,18 @@ final class MatchScoreboard
     }
 
     /**
+     * @param  array{score: int, badge: string|null}  $score
      * @return array<string, mixed>
      */
-    private function participant(MatchParticipant $p, float $minutes, int $teamDamage): array
+    private function participant(MatchParticipant $p, float $minutes, int $teamDamage, array $score): array
     {
         $cs = $p->total_minions_killed + $p->neutral_minions_killed;
 
         return [
+            'id' => $p->id,
+            'score' => $score['score'],
+            'badge' => $score['badge'],
+            'build' => $this->builds->build($p),
             'player' => $p->player,
             'name' => $p->player?->name ?? $this->riotName($p),
             'riot_id' => $this->riotName($p),

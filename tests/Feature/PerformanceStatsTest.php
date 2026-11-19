@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Enums\RankedQueue;
+use App\Enums\MatchQueue;
 use App\Services\Stats\PerformanceStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\BuildsGames;
@@ -83,9 +83,9 @@ class PerformanceStatsTest extends TestCase
         $this->addGame($player, ['win' => false], queueId: 440);
 
         $this->assertSame(3, $this->stats()->forPlayer($player->id)['games']);
-        $this->assertSame(2, $this->stats()->forPlayer($player->id, RankedQueue::Solo)['games']);
-        $this->assertSame(1, $this->stats()->forPlayer($player->id, RankedQueue::Flex)['games']);
-        $this->assertSame(0.0, $this->stats()->forPlayer($player->id, RankedQueue::Flex)['winrate']);
+        $this->assertSame(2, $this->stats()->forPlayer($player->id, MatchQueue::Solo)['games']);
+        $this->assertSame(1, $this->stats()->forPlayer($player->id, MatchQueue::Flex)['games']);
+        $this->assertSame(0.0, $this->stats()->forPlayer($player->id, MatchQueue::Flex)['winrate']);
     }
 
     public function test_players_without_games_get_zeroed_stats(): void
@@ -185,7 +185,7 @@ class PerformanceStatsTest extends TestCase
         $this->assertSame([3020, 6655, 0, 0, 0, 0, 3340], $row['items']);
         $this->assertSame('SG2_100001', $row['match_id']);
 
-        $this->assertCount(0, $this->stats()->recentMatches($player->id, RankedQueue::Solo));
-        $this->assertCount(1, $this->stats()->recentMatches($player->id, RankedQueue::Flex));
+        $this->assertCount(0, $this->stats()->recentMatches($player->id, MatchQueue::Solo));
+        $this->assertCount(1, $this->stats()->recentMatches($player->id, MatchQueue::Flex));
     }
 }

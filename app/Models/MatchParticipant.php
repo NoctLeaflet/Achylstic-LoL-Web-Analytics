@@ -31,6 +31,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'items',
     'summoner_spells',
     'perks',
+    'item_purchases',
+    'skill_order',
 ])]
 #[WithoutTimestamps]
 class MatchParticipant extends Model
@@ -57,6 +59,8 @@ class MatchParticipant extends Model
             'items' => 'array',
             'summoner_spells' => 'array',
             'perks' => 'array',
+            'item_purchases' => 'array',
+            'skill_order' => 'array',
         ];
     }
 
