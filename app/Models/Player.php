@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'game_name',
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'profile_icon_id',
     'summoner_level',
     'is_active',
+    'goal_tier',
+    'goal_division',
 ])]
 class Player extends Model
 {
@@ -52,6 +55,16 @@ class Player extends Model
     protected function riotId(): Attribute
     {
         return Attribute::get(fn () => "{$this->game_name}#{$this->tag_line}");
+    }
+
+    public function masteries(): HasMany
+    {
+        return $this->hasMany(ChampionMastery::class);
+    }
+
+    public function liveGame(): HasOne
+    {
+        return $this->hasOne(LiveGame::class);
     }
 
     public function scopeActive(Builder $query): Builder

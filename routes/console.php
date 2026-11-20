@@ -50,3 +50,15 @@ Schedule::command('db:backup')
     ->dailyAt('03:30')
     ->withoutOverlapping(30)
     ->appendOutputTo(storage_path('logs/riot-sync.log'));
+
+// Who is in a game right now (spectator-v5). 9 players = 9 requests per run, far below the key's budget.
+Schedule::command('riot:sync-live')
+    ->everyTwoMinutes()
+    ->withoutOverlapping(5)
+    ->appendOutputTo(storage_path('logs/riot-sync.log'));
+
+// Champion mastery changes slowly: once a day is plenty.
+Schedule::command('riot:sync-mastery')
+    ->dailyAt('04:00')
+    ->withoutOverlapping(30)
+    ->appendOutputTo(storage_path('logs/riot-sync.log'));

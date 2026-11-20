@@ -7,6 +7,7 @@ use App\Models\Player;
 use App\Models\RankSnapshot;
 use App\Services\Backup\DatabaseBackup;
 use App\Services\Riot\KeyHealth;
+use App\Services\Stats\RankGoal;
 use App\Services\Sync\SyncStatus;
 use Illuminate\View\View;
 
@@ -21,6 +22,7 @@ class DashboardController extends Controller
             'defaultPlatform' => config('services.riot.platform'),
             'sync' => app(SyncStatus::class)->get(),
             'keyRejection' => app(KeyHealth::class)->rejection(),
+            'goalOptions' => RankGoal::options(),
             'backup' => app(DatabaseBackup::class)->latest(),
             'lastRankSnapshot' => RankSnapshot::query()->max('captured_at'),
         ]);

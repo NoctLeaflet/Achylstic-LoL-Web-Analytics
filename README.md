@@ -59,6 +59,10 @@ Every stored game of the group, newest first and grouped by day, with each playe
 - Averages: KDA, CS/min, damage/min, gold/min and vision/min
 - **Performance trend**: the last 10 games against the up to 40 games before them for KDA, CS/min, damage/min, vision/min and winrate, with the change in percent
 - **Lanes**: games, share, KDA and winrate per lane
+- **Rank goal**: the admin can set a Solo/Duo target (for example Gold I); the page shows the progress, the LP to go and an estimate of the days left from the pace of the last 14 days
+- **Achievements**: 13 badges computed from stored data (100 and 500 games, 10 wins in a row, a deathless win, 20 kills, 25 assists, 100 vision score, 50 games on one champion, 20 different champions, and reaching Gold, Platinum, Emerald and Diamond)
+- **Champion mastery**: level and points of the top 10 champions, refreshed daily from Riot
+- **Live status**: a "Sedang main" badge (also on the leaderboard) while the player is in a game
 - Top champions, recent matches (with a link to every match of the player), and the record with every friend, both on the same team and against each other
 - Filter by game mode: All, Solo/Duo, Flex, Normal Draft, ARAM and ARAM Mayhem
 
@@ -105,7 +109,10 @@ Optional. A webhook posts a message when a match of the group ends, when someone
 
 The match message has one block per tracked player: champion, lane and the champion of the lane opponent, K/D/A, KDA, CS/min, kill participation, damage, and the 0 to 100 score with an MVP or ACE badge. When a rate moved by 15% or more over the last 10 games, a line says so (for example "CS/min up 226% to 6.0 over the last 10 games, was 1.8"). The title shows the result and game mode, the footer the duration and patch.
 
-Two more messages:
+More messages:
+
+- **New game**: "🎮 Sedang bermain" when friends start a game (one message per game, only for games that just started).
+- **Achievements**: "🏅 Pencapaian baru!" when a player earns a badge (only recent ones, so the history of a new player stays quiet).
 
 - **Weekly summary**, every Monday at 09:00: the top climber, the standout games and the awards of the past 7 days. Send it by hand with `php artisan discord:weekly`.
 - **API key warning**: when Riot rejects the key, Discord hears about it once (not every 15 minutes) and the admin page shows a red banner until the key works again.
@@ -229,7 +236,9 @@ Which game modes are fetched is set in `config/services.php` (`riot.tracked_queu
 | `riot:sync-ranks` | Stores a rank snapshot for every active player when something changed | every 15 min |
 | `riot:sync-matches {--count=20}` | Fetches new matches, and details only for matches not stored yet | every 30 min |
 | `riot:sync-timelines {--limit=30}` | Fetches item purchases, skill order and the per-minute gold, damage, exp and CS for stored matches (use `--limit=200` to catch up after an update) | at :15 and :45 |
-| `riot:sync-all` | Runs the three syncs above one after another (what the admin "Sinkron sekarang" button starts) | |
+| `riot:sync-live` | Checks which active players are in a game right now and announces new games in Discord | every 2 min |
+| `riot:sync-mastery` | Fetches the top 10 champion masteries of every active player | daily 04:00 |
+| `riot:sync-all` | Runs ranks, matches, timelines and mastery one after another (what the admin "Sinkron sekarang" button starts); a mastery failure does not fail the rest | |
 | `db:backup` | Dumps the database to a compressed file in `storage/app/backups` and keeps the newest 14 | nightly 03:30 |
 | `discord:test` | Sends a test message to the configured webhook | |
 | `discord:weekly` | Sends the weekly summary to the webhook | Mondays 09:00 |
@@ -257,7 +266,7 @@ php artisan test
 vendor/bin/pint --test      # code style
 ```
 
-The suite has 420+ tests and runs on in-memory SQLite (the `pdo_sqlite` PHP extension must be enabled). The Riot API is always faked, so tests never use your real key.
+The suite has 470+ tests and runs on in-memory SQLite (the `pdo_sqlite` PHP extension must be enabled). The Riot API is always faked, so tests never use your real key.
 
 ## Project layout
 
@@ -269,6 +278,7 @@ app/
 │   ├── Riot/                RiotClient, account, league, match and Data Dragon services
 │   ├── Stats/               leaderboard, KDA and per-minute stats, duo / head-to-head, match score,
 │   │                        weekly highlights, role coverage, match metrics, performance trend
+│   ├── Achievements/        badge catalogue and the tracker that finds and announces new ones
 │   ├── Sync/                background runner and status of the admin "sync now" button
 │   ├── Players/             PlayerRegistrar (shared by the command and the admin page)
 │   └── Discord/             webhook client and message builders

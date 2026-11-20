@@ -82,6 +82,26 @@ class DataDragonService
         });
     }
 
+    /**
+     * Display name per champion id, e.g. 62 => "Wukong" (the image file is "MonkeyKing").
+     * Empty when Data Dragon cannot be reached.
+     *
+     * @return array<int, string>
+     */
+    public function championNames(): array
+    {
+        return $this->staticData('champion-names', function (string $version) {
+            $champions = Http::timeout(10)->get($this->baseUrl()."/cdn/{$version}/data/en_US/champion.json")->json('data') ?? [];
+            $names = [];
+
+            foreach ($champions as $champion) {
+                $names[(int) $champion['key']] = (string) $champion['name'];
+            }
+
+            return $names;
+        });
+    }
+
     public function itemIcon(?int $itemId): ?string
     {
         return $itemId ? $this->asset('item', "{$itemId}.png") : null;

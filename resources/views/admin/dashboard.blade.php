@@ -53,6 +53,9 @@
                     <span class="font-medium text-rose-300">Gagal</span> {{ $sync['at']->diffForHumans() }}: {{ $sync['message'] }}
                 @elseif ($sync)
                     <span class="font-medium text-emerald-300">Selesai</span> {{ $sync['at']->diffForHumans() }}.
+                    @if ($sync['message'])
+                        <span class="text-amber-300">{{ $sync['message'] }}</span>
+                    @endif
                 @else
                     Ambil rank, match, dan timeline terbaru dari Riot sekarang, tanpa menunggu jadwal otomatis.
                 @endif
@@ -151,7 +154,7 @@
         @else
             <ul class="mt-3 divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
                 @foreach ($players as $player)
-                    <li @class(['flex flex-col gap-3 p-4 md:flex-row md:items-center', 'opacity-60' => ! $player->is_active])>
+                    <li @class(['flex flex-col gap-3 p-4 md:flex-row md:flex-wrap md:items-center', 'opacity-60' => ! $player->is_active])>
                         <div class="flex min-w-0 flex-1 items-center gap-3">
                             <x-profile-icon :player="$player" />
                             <div class="min-w-0">
@@ -178,6 +181,20 @@
                                     class="shrink-0 rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:bg-slate-800">
                                 Simpan
                             </button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.players.goal', $player) }}">
+                            @csrf
+                            @method('PATCH')
+                            <label for="goal_{{ $player->id }}" class="sr-only">Target rank {{ $player->riot_id }}</label>
+                            <select id="goal_{{ $player->id }}" name="goal" onchange="this.form.submit()"
+                                    class="block w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 md:w-36">
+                                <option value="">Tanpa target</option>
+                                @foreach ($goalOptions as $value => $label)
+                                    <option value="{{ $value }}" @selected($player->goal_tier && $value === $player->goal_tier.':'.$player->goal_division)>Target {{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <noscript><button type="submit" class="mt-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200">Simpan target</button></noscript>
                         </form>
 
                         <form method="POST" action="{{ route('admin.players.toggle', $player) }}">

@@ -12,6 +12,19 @@
         <x-queue-toggle :queue="$queue" />
     </div>
 
+    {{-- Friends who are in a game right now --}}
+    @if ($liveGames->isNotEmpty())
+        <div class="mt-5 flex flex-wrap items-center gap-2" aria-label="Sedang bermain">
+            @foreach ($liveGames as $live)
+                <a href="{{ route('players.show', $live->player) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 py-1 pl-1 pr-3 text-sm text-white hover:bg-slate-800">
+                    <x-profile-icon :player="$live->player" size="size-6" />
+                    {{ $live->player->name }}
+                    <x-live-badge :game="$live" />
+                </a>
+            @endforeach
+        </div>
+    @endif
+
     {{-- Biggest LP gain over the last 7 days (only shown when somebody actually gained LP) --}}
     @if ($climber)
         <a href="{{ route('players.show', ['player' => $climber['player'], 'queue' => $queue->slug()]) }}"

@@ -39,6 +39,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('sync', [SyncController::class, 'store'])->name('sync');
         Route::post('players', [AdminPlayerController::class, 'store'])->name('players.store');
         Route::patch('players/{player}', [AdminPlayerController::class, 'update'])->name('players.update');
+        Route::patch('players/{player}/goal', [AdminPlayerController::class, 'updateGoal'])->name('players.goal');
         Route::patch('players/{player}/active', [AdminPlayerController::class, 'toggleActive'])->name('players.toggle');
     });
 });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\MatchQueue;
 use App\Enums\RankedQueue;
+use App\Models\LiveGame;
 use App\Services\Stats\ClimberOfTheWeek;
 use App\Services\Stats\LeaderboardBuilder;
 use App\Services\Stats\RoleCoverage;
@@ -31,6 +32,8 @@ class LeaderboardController extends Controller
             'bestMode' => $bestMode,
             'trackedModes' => MatchQueue::tracked(),
             'roles' => $roles->build(),
+            // Friends in a game right now, by player id (the table is filled by riot:sync-live).
+            'liveGames' => LiveGame::current()->whereHas('player', fn ($q) => $q->where('is_active', true))->with('player')->get()->keyBy('player_id'),
         ]);
     }
 }

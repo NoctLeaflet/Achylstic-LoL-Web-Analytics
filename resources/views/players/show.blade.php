@@ -19,6 +19,9 @@
                     @endif
                     <span class="text-slate-600">·</span> {{ strtoupper($player->platform) }}
                 </p>
+                @if ($liveGame)
+                    <x-live-badge :game="$liveGame" class="mt-1" />
+                @endif
             </div>
         </div>
 
@@ -42,6 +45,35 @@
             <x-queue-toggle :queue="$queue" :options="$queueOptions" all />
         </div>
     </div>
+
+    {{-- Rank goal set by the admin --}}
+    @if ($goal)
+        <section class="mt-6 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4" aria-labelledby="goal-heading">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="goal-heading" class="text-lg font-semibold text-white">Target: {{ $goal['label'] }}</h2>
+                <span class="text-sm text-slate-400">Sekarang {{ $goal['current'] }}</span>
+            </div>
+
+            <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $goal['percent'] }}" aria-label="Progres menuju {{ $goal['label'] }}">
+                <div @class(['h-full rounded-full', 'bg-emerald-400' => $goal['reached'], 'bg-indigo-400' => ! $goal['reached']]) style="width: {{ $goal['percent'] }}%"></div>
+            </div>
+
+            <p class="mt-2 text-sm text-slate-300">
+                @if ($goal['reached'])
+                    <span class="font-semibold text-emerald-300">Target tercapai! 🎉</span>
+                @else
+                    <span class="font-semibold text-white">{{ $goal['percent'] }}%</span> menuju target, kurang
+                    <span class="font-semibold text-white">{{ $goal['remaining'] }} LP</span>.
+                    @if ($goal['eta_days'] !== null)
+                        Dengan laju {{ $goal['per_day'] }} LP per hari, perkiraan tercapai dalam
+                        <span class="font-semibold text-white">{{ $goal['eta_days'] }} hari</span>.
+                    @else
+                        <span class="text-slate-500">Belum ada kemajuan dalam {{ \App\Services\Stats\RankGoal::PACE_DAYS }} hari terakhir, jadi belum ada perkiraan.</span>
+                    @endif
+                @endif
+            </p>
+        </section>
+    @endif
 
     {{-- LP over time (only Solo/Duo and Flex have LP) --}}
     <section class="mt-6" aria-labelledby="lp-heading">
@@ -152,6 +184,56 @@
             </div>
         </section>
     @endif
+
+    {{-- Champion mastery (from Riot, refreshed daily) --}}
+    @if ($masteries->isNotEmpty())
+        <section class="mt-6" aria-labelledby="mastery-heading">
+            <h2 id="mastery-heading" class="mb-3 text-lg font-semibold text-white">Champion mastery</h2>
+            <ul class="divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
+                @foreach ($masteries as $mastery)
+                    <li class="flex items-center gap-3 px-4 py-3">
+                        <x-champion-icon :name="$championNames[$mastery->champion_id] ?? ''" :id="$mastery->champion_id" />
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium text-white">{{ $championNames[$mastery->champion_id] ?? 'Champion #'.$mastery->champion_id }}</p>
+                            <p class="text-xs text-slate-500">
+                                {{ $mastery->last_played_at ? 'Terakhir dimainkan '.$mastery->last_played_at->diffForHumans() : 'Belum ada data waktu main' }}
+                            </p>
+                        </div>
+                        <div class="text-right text-sm tabular-nums">
+                            <p class="font-semibold text-amber-300">Level {{ $mastery->level }}</p>
+                            <p class="text-xs text-slate-400">{{ number_format($mastery->points, 0, ',', '.') }} poin</p>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
+    {{-- Achievements: earned ones first (newest first), locked ones dimmed --}}
+    <section class="mt-6" aria-labelledby="achievements-heading">
+        <h2 id="achievements-heading" class="text-lg font-semibold text-white">
+            Pencapaian
+            <span class="text-sm font-normal text-slate-500">{{ collect($achievements)->whereNotNull('earned_at')->count() }} dari {{ count($achievements) }}</span>
+        </h2>
+        <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($achievements as $achievement)
+                <li @class([
+                    'flex items-center gap-3 rounded-xl border p-3',
+                    'border-amber-500/30 bg-amber-500/5' => $achievement['earned_at'],
+                    'border-slate-800 bg-slate-900/30 opacity-50' => ! $achievement['earned_at'],
+                ])>
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-xl {{ $achievement['earned_at'] ? '' : 'grayscale' }}" aria-hidden="true">{{ $achievement['icon'] }}</span>
+                    <div class="min-w-0">
+                        <p class="truncate font-semibold text-white">{{ $achievement['name'] }}</p>
+                        <p class="text-xs text-slate-400">{{ $achievement['description'] }}</p>
+                        <p class="text-xs text-slate-500">
+                            {{ $achievement['earned_at'] ? 'Diraih '.$achievement['earned_at']->translatedFormat('j M Y') : 'Belum diraih' }}
+                        </p>
+                    </div>
+                </li>
+            @endforeach
+        </ul>
+    </section>
 
     {{-- Top champions --}}
     @if (count($topChampions) > 0)

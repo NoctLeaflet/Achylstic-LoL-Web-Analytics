@@ -33,7 +33,12 @@ class SyncAllCommand extends Command
             return self::FAILURE;
         }
 
-        $status->done();
+        // Champion mastery is a nice extra: when it fails, the sync that really matters (ranks, matches,
+        // timelines) still counts as done, and the admin page says so.
+        $this->info('== riot:sync-mastery');
+        $mastery = $this->call('riot:sync-mastery') === self::SUCCESS;
+
+        $status->done($mastery ? null : 'Champion mastery gagal diambil (rank, match, dan timeline berhasil).');
 
         return self::SUCCESS;
     }

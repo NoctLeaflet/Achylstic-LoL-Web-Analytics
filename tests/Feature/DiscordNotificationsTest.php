@@ -49,6 +49,8 @@ class DiscordNotificationsTest extends TestCase
     {
         return Http::recorded(fn (Request $request) => $request->url() === self::URL)
             ->map(fn (array $pair) => $pair[0]->data())
+            // Achievement messages have their own tests (AchievementsTest); here only matches and ranks.
+            ->reject(fn (array $payload) => ($payload['embeds'][0]['title'] ?? '') === '🏅 Pencapaian baru!')
             ->values()
             ->all();
     }

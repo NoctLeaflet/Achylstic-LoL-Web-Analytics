@@ -61,4 +61,22 @@ class ScheduleTest extends TestCase
         $this->assertSame('30 3 * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
     }
+
+    public function test_who_is_playing_is_checked_every_two_minutes_without_overlapping(): void
+    {
+        $event = $this->scheduledEvent('riot:sync-live');
+
+        $this->assertNotNull($event);
+        $this->assertSame('*/2 * * * *', $event->expression);
+        $this->assertTrue($event->withoutOverlapping);
+    }
+
+    public function test_champion_mastery_is_synced_once_a_day(): void
+    {
+        $event = $this->scheduledEvent('riot:sync-mastery');
+
+        $this->assertNotNull($event);
+        $this->assertSame('0 4 * * *', $event->expression);
+        $this->assertTrue($event->withoutOverlapping);
+    }
 }

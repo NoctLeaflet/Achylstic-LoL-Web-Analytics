@@ -7,6 +7,7 @@ use App\Models\Player;
 use App\Services\Players\PlayerRegistrar;
 use App\Services\Players\PlayerRegistrationException;
 use App\Services\Riot\Exceptions\RiotApiException;
+use App\Services\Stats\RankGoal;
 use App\Services\Sync\BackgroundRunner;
 use App\Services\Sync\SyncStatus;
 use Illuminate\Http\RedirectResponse;
@@ -74,6 +75,21 @@ class PlayerController extends Controller
         $player->update(['display_name' => $name !== '' ? $name : null]);
 
         return redirect()->route('admin.dashboard')->with('status', "Nama panggilan {$player->riot_id} disimpan.");
+    }
+
+    /** Set (or clear) the Solo/Duo rank the player is aiming for. */
+    public function updateGoal(Request $request, Player $player): RedirectResponse
+    {
+        $data = $request->validate([
+            'goal' => ['nullable', 'string', Rule::in(array_keys(RankGoal::options()))],
+        ]);
+
+        [$tier, $division] = ($data['goal'] ?? null) ? explode(':', $data['goal']) : [null, null];
+        $player->update(['goal_tier' => $tier, 'goal_division' => $division]);
+
+        return redirect()->route('admin.dashboard')->with('status', $tier
+            ? "Target {$player->name}: ".RankGoal::options()[$data['goal']].'.'
+            : "Target {$player->name} dihapus.");
     }
 
     /** Show or hide a player on the leaderboard (and stop syncing them). Their data is kept. */

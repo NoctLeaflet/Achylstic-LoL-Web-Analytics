@@ -5,15 +5,20 @@ namespace App\Services\Discord;
 use App\Enums\MatchQueue;
 use App\Enums\RankedQueue;
 use App\Events\RankChanged;
+use App\Models\Achievement;
 use App\Models\GameMatch;
+use App\Models\LiveGame;
 use App\Models\MatchParticipant;
 use App\Models\Player;
+use App\Services\Achievements\AchievementCatalog;
+use App\Services\Riot\DataDragonService;
 use App\Services\Stats\MatchScore;
 use App\Services\Stats\PerformanceTrend;
 use App\Services\Stats\RankScore;
 use App\Services\Stats\WeeklyHighlights;
 use App\Support\Format;
 use Illuminate\Support\Collection;
+use Throwable;
 
 /**
  * Builds the Discord embeds. Pure formatting: nothing is sent from here.
@@ -45,6 +50,7 @@ final class DiscordMessages
     public function __construct(
         private readonly MatchScore $scores,
         private readonly PerformanceTrend $trends,
+        private readonly DataDragonService $ddragon,
     ) {}
 
     /**
@@ -185,6 +191,46 @@ final class DiscordMessages
     }
 
     /**
+     * Friends who just started the same game.
+     *
+     * @param  Collection<int, LiveGame>  $rows  live games of one game id, with their player loaded
+     * @return array<string, mixed>
+     */
+    public function liveGame(Collection $rows): array
+    {
+        $names = $this->championNames();
+        $queue = MatchQueue::fromQueueId($rows->first()->queue_id)?->label();
+
+        return $this->embed([
+            'title' => '🎮 Sedang bermain'.($queue ? " · {$queue}" : ''),
+            'description' => $rows->map(fn (LiveGame $row) => '**'.$this->escape($row->player->name).'**'
+                .($row->champion_id && isset($names[$row->champion_id]) ? ' · '.$this->escape($names[$row->champion_id]) : ''))->implode("\n"),
+            'color' => self::SKY,
+            'url' => $this->siteUrl('leaderboard', []),
+        ]);
+    }
+
+    /**
+     * New achievements of one player.
+     *
+     * @param  list<Achievement>  $achievements
+     * @return array<string, mixed>
+     */
+    public function achievements(Player $player, array $achievements): array
+    {
+        $catalog = AchievementCatalog::all();
+
+        return $this->embed([
+            'title' => '🏅 Pencapaian baru!',
+            'description' => "**{$this->escape($player->name)}** meraih:\n".collect($achievements)
+                ->map(fn (Achievement $a) => "{$catalog[$a->code]['icon']} **{$catalog[$a->code]['name']}**: {$catalog[$a->code]['description']}")
+                ->implode("\n"),
+            'color' => self::AMBER,
+            'url' => $this->siteUrl('players.show', ['player' => $player->id]),
+        ]);
+    }
+
+    /**
      * The nightly database backup failed.
      *
      * @return array<string, mixed>
@@ -286,6 +332,20 @@ final class DiscordMessages
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Champion display names from Data Dragon (cached); empty when it cannot be reached.
+     *
+     * @return array<int, string>
+     */
+    private function championNames(): array
+    {
+        try {
+            return $this->ddragon->championNames();
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     /** 48623 -> "48.6k" */
