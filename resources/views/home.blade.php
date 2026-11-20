@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', config('app.name').' · League of Legends Analysis')
+@section('description', config('app.name').' memantau akun League of Legends kamu dan teman satu grup, lalu membandingkan performa lewat leaderboard, grafik LP, dan detail match.')
 
 @section('content')
     {{-- Hero --}}

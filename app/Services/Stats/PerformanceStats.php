@@ -126,6 +126,45 @@ final class PerformanceStats
     }
 
     /**
+     * Games, winrate and KDA per lane (games without a lane, e.g. ARAM, are left out),
+     * most played first.
+     *
+     * @return list<array{position: string, label: string, games: int, share: int, winrate: int, kda: float}>
+     */
+    public function roles(int $playerId, ?MatchQueue $queue = null): array
+    {
+        $rows = $this->countedGames($queue)
+            ->where('match_participants.player_id', $playerId)
+            ->whereIn('match_participants.team_position', array_keys(RoleCoverage::ROLES))
+            ->groupBy('match_participants.team_position')
+            ->selectRaw('
+                match_participants.team_position as position,
+                COUNT(*) as games,
+                SUM(match_participants.win) as wins,
+                SUM(match_participants.kills) as kills,
+                SUM(match_participants.deaths) as deaths,
+                SUM(match_participants.assists) as assists
+            ')
+            ->toBase()
+            ->get();
+
+        $total = max((int) $rows->sum('games'), 1);
+
+        return $rows
+            ->map(fn ($row) => [
+                'position' => (string) $row->position,
+                'label' => RoleCoverage::ROLES[$row->position],
+                'games' => (int) $row->games,
+                'share' => (int) round((int) $row->games / $total * 100),
+                'winrate' => (int) round((int) $row->wins / (int) $row->games * 100),
+                'kda' => round(((int) $row->kills + (int) $row->assists) / max((int) $row->deaths, 1), 2),
+            ])
+            ->sort(fn ($a, $b) => [$b['games'], $a['label']] <=> [$a['games'], $b['label']])
+            ->values()
+            ->all();
+    }
+
+    /**
      * Latest matches of a player, newest first. Remakes are listed (flagged)
      * but never counted in the statistics above.
      *

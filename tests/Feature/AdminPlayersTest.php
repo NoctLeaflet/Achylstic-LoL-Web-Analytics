@@ -6,12 +6,14 @@ use App\Models\Admin;
 use App\Models\MatchParticipant;
 use App\Models\Player;
 use App\Services\Riot\MatchService;
+use App\Services\Sync\BackgroundRunner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
 use Tests\Support\BuildsGames;
+use Tests\Support\FakeBackgroundRunner;
 use Tests\Support\RiotFixtures;
 use Tests\TestCase;
 
@@ -25,6 +27,7 @@ class AdminPlayersTest extends TestCase
         parent::setUp();
 
         Sleep::fake();
+        $this->app->instance(BackgroundRunner::class, new FakeBackgroundRunner);
         $this->withoutVite();
         Cache::put('ddragon.version', '16.1.1');
 

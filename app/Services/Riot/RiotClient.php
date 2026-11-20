@@ -110,15 +110,20 @@ class RiotClient
             $status = $response->status();
 
             if ($response->successful()) {
+                app(KeyHealth::class)->succeeded();
+
                 return $response->json() ?? [];
             }
 
             if ($status === 404) {
+                app(KeyHealth::class)->succeeded();
+
                 return null;
             }
 
             if ($status === 401 || $status === 403) {
                 Log::error('Riot API key rejected', ['status' => $status, 'host' => $host]);
+                app(KeyHealth::class)->rejected($status);
 
                 throw RiotAuthException::rejected($status);
             }

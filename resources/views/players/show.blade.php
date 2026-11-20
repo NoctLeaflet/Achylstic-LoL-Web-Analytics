@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $player->name.' · '.config('app.name'))
+@section('description', $player->name.' ('.$player->riot_id.'): '.($current ? \App\Services\Stats\RankScore::label($current->tier, $current->rank, $current->league_points).' di '.$headerQueue->label().', ' : '').'statistik, grafik LP, dan match terakhir.')
 
 @section('content')
     <x-back-link :fallback="route('leaderboard', ['queue' => $headerQueue->slug()])" />
@@ -107,6 +108,51 @@
         @endif
     </section>
 
+    {{-- Trend: the last games against the ones before them --}}
+    @if ($trend)
+        <section class="mt-6" aria-labelledby="trend-heading">
+            <h2 id="trend-heading" class="text-lg font-semibold text-white">Tren performa</h2>
+            <p class="mb-3 text-sm text-slate-400">
+                {{ $trend['recent_games'] }} game terakhir dibanding {{ $trend['before_games'] }} game sebelumnya ({{ $queueLabel }}).
+            </p>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                @foreach ($trend['metrics'] as $metric)
+                    @php
+                        $change = $metric['change'];
+                    @endphp
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+                        <p class="text-xs uppercase tracking-wide text-slate-500">{{ $metric['label'] }}</p>
+                        <p class="mt-1 text-2xl font-semibold tabular-nums text-white">{{ \App\Support\Format::number($metric['recent'], $metric['decimals']) }}</p>
+                        <p class="mt-1 text-xs tabular-nums text-slate-500">
+                            @if ($change === null || $change === 0)
+                                <span>sama seperti sebelumnya</span>
+                            @else
+                                <span @class(['font-semibold', 'text-emerald-400' => $change > 0, 'text-rose-400' => $change < 0])>{{ $change > 0 ? '▲ +' : '▼ ' }}{{ $change }}%</span>
+                                dari {{ \App\Support\Format::number($metric['before'], $metric['decimals']) }}
+                            @endif
+                        </p>
+                    </div>
+                @endforeach
+
+                @php
+                    $winrate = $trend['winrate'];
+                @endphp
+                <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Winrate</p>
+                    <p class="mt-1 text-2xl font-semibold tabular-nums text-white">{{ $winrate['recent'] }}%</p>
+                    <p class="mt-1 text-xs tabular-nums text-slate-500">
+                        @if ($winrate['change'] === 0)
+                            <span>sama seperti sebelumnya</span>
+                        @else
+                            <span @class(['font-semibold', 'text-emerald-400' => $winrate['change'] > 0, 'text-rose-400' => $winrate['change'] < 0])>{{ $winrate['change'] > 0 ? '▲ +' : '▼ ' }}{{ $winrate['change'] }} poin</span>
+                            dari {{ $winrate['before'] }}%
+                        @endif
+                    </p>
+                </div>
+            </div>
+        </section>
+    @endif
+
     {{-- Top champions --}}
     @if (count($topChampions) > 0)
         <section class="mt-6" aria-labelledby="champions-heading">
@@ -122,6 +168,31 @@
                         <div class="text-right text-sm tabular-nums">
                             <p class="text-slate-200">{{ \App\Support\Format::number($champion['winrate']) }}%</p>
                             <p class="text-xs text-slate-500">{{ \App\Support\Format::number($champion['kda'], 2) }} KDA</p>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
+    {{-- Lanes --}}
+    @if (count($roles) > 0)
+        <section class="mt-6" aria-labelledby="roles-heading">
+            <h2 id="roles-heading" class="mb-3 text-lg font-semibold text-white">Lane</h2>
+            <ul class="divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
+                @foreach ($roles as $role)
+                    <li class="px-4 py-3">
+                        <div class="flex items-baseline justify-between gap-3 text-sm">
+                            <span class="font-medium text-white">{{ $role['label'] }}</span>
+                            <span class="text-xs tabular-nums text-slate-400">{{ $role['games'] }} game ({{ $role['share'] }}%) · {{ \App\Support\Format::number($role['kda'], 2) }} KDA</span>
+                            <span @class([
+                                'w-12 text-right font-semibold tabular-nums',
+                                'text-emerald-400' => $role['winrate'] >= 50,
+                                'text-rose-400' => $role['winrate'] < 50,
+                            ])>{{ $role['winrate'] }}%</span>
+                        </div>
+                        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800" aria-hidden="true">
+                            <div class="h-full rounded-full bg-indigo-400" style="width: {{ $role['share'] }}%"></div>
                         </div>
                     </li>
                 @endforeach
@@ -171,7 +242,10 @@
 
     {{-- Recent matches --}}
     <section class="mt-6" aria-labelledby="matches-heading">
-        <h2 id="matches-heading" class="mb-3 text-lg font-semibold text-white">Match terakhir</h2>
+        <div class="mb-3 flex items-baseline justify-between gap-3">
+            <h2 id="matches-heading" class="text-lg font-semibold text-white">Match terakhir</h2>
+            <a href="{{ route('matches.index', array_filter(['player' => $player->id, 'mode' => $queue?->slug()])) }}" class="text-sm text-sky-400 hover:text-sky-300">Semua match &rarr;</a>
+        </div>
 
         @if (count($recentMatches) === 0)
             <p class="rounded-xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">Belum ada match.</p>

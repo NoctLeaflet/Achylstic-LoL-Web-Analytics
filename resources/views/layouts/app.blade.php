@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <title>@yield('title', config('app.name'))</title>
+
+    {{-- Link previews (Discord, WhatsApp, social media). Pages can set @section('description'). --}}
+    @php
+        $metaDescription = trim($__env->yieldContent('description')) ?: 'Pantau rank, bandingkan performa, dan lihat detail match League of Legends untuk satu grup teman: leaderboard, grafik LP, duo, dan banyak lagi.';
+        $metaTitle = trim($__env->yieldContent('title')) ?: config('app.name');
+    @endphp
+    <meta name="description" content="{{ $metaDescription }}">
+    <meta name="theme-color" content="#020617">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('app.name') }}">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('og-image.png') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ config('app.name') }}, League of Legends Analysis">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('icon-192.png') }}" sizes="192x192">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
@@ -33,6 +51,12 @@
                        'bg-slate-800 text-white' => request()->routeIs('matches.index'),
                        'text-slate-400 hover:text-slate-200' => ! request()->routeIs('matches.index'),
                    ])>Matches</a>
+                <a href="{{ route('duos') }}"
+                   @class([
+                       'rounded-md px-2 py-1.5 font-medium transition sm:px-3',
+                       'bg-slate-800 text-white' => request()->routeIs('duos'),
+                       'text-slate-400 hover:text-slate-200' => ! request()->routeIs('duos'),
+                   ])>Duo</a>
                 <a href="{{ route('compare') }}"
                    @class([
                        'rounded-md px-2 py-1.5 font-medium transition sm:px-3',

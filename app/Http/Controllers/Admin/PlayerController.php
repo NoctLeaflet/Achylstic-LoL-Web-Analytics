@@ -7,6 +7,8 @@ use App\Models\Player;
 use App\Services\Players\PlayerRegistrar;
 use App\Services\Players\PlayerRegistrationException;
 use App\Services\Riot\Exceptions\RiotApiException;
+use App\Services\Sync\BackgroundRunner;
+use App\Services\Sync\SyncStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,7 +16,7 @@ use Illuminate\Validation\Rule;
 class PlayerController extends Controller
 {
     /** Add a friend by Riot ID ("Name#TAG"); resolves the PUUID and profile through Riot. */
-    public function store(Request $request, PlayerRegistrar $registrar): RedirectResponse
+    public function store(Request $request, PlayerRegistrar $registrar, SyncStatus $syncStatus, BackgroundRunner $runner): RedirectResponse
     {
         $data = $request->validate([
             'riot_id' => ['required', 'string', 'max:60', 'regex:/^.{1,40}#[A-Za-z0-9]{3,5}$/u'],
@@ -39,7 +41,21 @@ class PlayerController extends Controller
         $player = $result['player'];
 
         if ($result['created']) {
-            $message = "{$player->name} ({$player->riot_id}) ditambahkan. Rank dan match muncul setelah sync berikutnya.";
+            $message = "{$player->name} ({$player->riot_id}) ditambahkan.";
+
+            // Fetch their rank and matches right away instead of waiting for the scheduler.
+            if (! $syncStatus->isRunning()) {
+                $syncStatus->running();
+
+                if ($runner->run('riot:sync-all')) {
+                    $message .= ' Rank dan match mulai diambil di latar belakang.';
+                } else {
+                    $syncStatus->failed('Proses latar belakang tidak bisa dimulai.');
+                    $message .= ' Rank dan match muncul setelah sync berikutnya.';
+                }
+            } else {
+                $message .= ' Sinkronisasi sedang berjalan; datanya ikut terambil di sync berikutnya.';
+            }
         } else {
             $message = "{$player->riot_id} sudah terdaftar, dan sekarang ditampilkan di leaderboard.";
         }

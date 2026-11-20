@@ -3,7 +3,9 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\PlayerController as AdminPlayerController;
+use App\Http\Controllers\Admin\SyncController;
 use App\Http\Controllers\CompareController;
+use App\Http\Controllers\DuoController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\MatchController;
@@ -17,6 +19,7 @@ Route::get('/leaderboard', LeaderboardController::class)->name('leaderboard');
 Route::get('/players/{player}', PlayerController::class)->name('players.show');
 Route::get('/compare', CompareController::class)->name('compare');
 Route::get('/matches', MatchListController::class)->name('matches.index');
+Route::get('/duos', DuoController::class)->name('duos');
 // Matches are addressed by their Riot match id, e.g. /matches/SG2_123456789
 Route::get('/matches/{gameMatch:match_id}', MatchController::class)->name('matches.show');
 
@@ -31,6 +34,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::post('sync', [SyncController::class, 'store'])->name('sync');
         Route::post('players', [AdminPlayerController::class, 'store'])->name('players.store');
         Route::patch('players/{player}', [AdminPlayerController::class, 'update'])->name('players.update');
         Route::patch('players/{player}/active', [AdminPlayerController::class, 'toggleActive'])->name('players.toggle');

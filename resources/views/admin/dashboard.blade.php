@@ -27,6 +27,50 @@
         </p>
     @endif
 
+    @if ($keyRejection)
+        <div role="alert" class="mt-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-100">
+            <p class="font-semibold text-rose-200">API key Riot ditolak (HTTP {{ $keyRejection['status'] }}), sejak {{ $keyRejection['since']->diffForHumans() }}.</p>
+            <p class="mt-1 text-rose-200/80">
+                Key kedaluwarsa atau tidak valid, jadi rank dan match tidak diperbarui. Ambil key baru di developer.riotgames.com,
+                isi <code class="rounded bg-slate-950/60 px-1">RIOT_API_KEY</code> di file <code class="rounded bg-slate-950/60 px-1">.env</code>,
+                lalu tekan Sinkron sekarang. Peringatan ini hilang sendiri setelah Riot menerima key.
+            </p>
+        </div>
+    @endif
+
+    @error('sync')
+        <p role="alert" class="mt-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{{ $message }}</p>
+    @enderror
+
+    {{-- Sync now --}}
+    <section class="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
+        <div class="min-w-0">
+            <h2 class="text-lg font-semibold text-white">Sinkronisasi data</h2>
+            <p class="mt-1 text-sm text-slate-400">
+                @if ($sync && $sync['state'] === 'running')
+                    <span class="font-medium text-amber-300">Sedang berjalan</span> sejak {{ $sync['at']->diffForHumans() }}. Muat ulang halaman ini nanti untuk melihat hasilnya.
+                @elseif ($sync && $sync['state'] === 'failed')
+                    <span class="font-medium text-rose-300">Gagal</span> {{ $sync['at']->diffForHumans() }}: {{ $sync['message'] }}
+                @elseif ($sync)
+                    <span class="font-medium text-emerald-300">Selesai</span> {{ $sync['at']->diffForHumans() }}.
+                @else
+                    Ambil rank, match, dan timeline terbaru dari Riot sekarang, tanpa menunggu jadwal otomatis.
+                @endif
+            </p>
+            <p class="mt-1 text-xs text-slate-500">
+                Snapshot rank terakhir: {{ $lastRankSnapshot ? \Illuminate\Support\Carbon::parse($lastRankSnapshot)->diffForHumans() : 'belum ada' }}.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ route('admin.sync') }}" x-data="{ busy: false }" @submit="busy = true">
+            @csrf
+            <button type="submit" x-bind:disabled="busy || {{ $sync && $sync['state'] === 'running' ? 'true' : 'false' }}"
+                    class="rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-60">
+                Sinkron sekarang
+            </button>
+        </form>
+    </section>
+
     {{-- Add a friend --}}
     <section class="mt-5 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
         <h2 class="text-lg font-semibold text-white">Tambah teman</h2>

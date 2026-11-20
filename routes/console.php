@@ -36,3 +36,10 @@ Schedule::command('riot:sync-timelines')
     ->cron('15,45 * * * *')
     ->withoutOverlapping(60)
     ->appendOutputTo(storage_path('logs/riot-sync.log'));
+
+// Every Monday morning (app timezone): the summary of the past week in Discord.
+// It only sends when DISCORD_WEBHOOK_URL is set and somebody played.
+Schedule::command('discord:weekly')
+    ->weeklyOn(1, '09:00')
+    ->withoutOverlapping(10)
+    ->appendOutputTo(storage_path('logs/riot-sync.log'));

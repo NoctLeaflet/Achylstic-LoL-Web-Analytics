@@ -3,12 +3,15 @@
 namespace App\Services\Discord;
 
 use App\Enums\MatchQueue;
+use App\Enums\RankedQueue;
 use App\Events\RankChanged;
 use App\Models\GameMatch;
 use App\Models\MatchParticipant;
 use App\Models\Player;
 use App\Services\Stats\MatchScore;
+use App\Services\Stats\PerformanceTrend;
 use App\Services\Stats\RankScore;
+use App\Services\Stats\WeeklyHighlights;
 use App\Support\Format;
 use Illuminate\Support\Collection;
 
@@ -41,6 +44,7 @@ final class DiscordMessages
 
     public function __construct(
         private readonly MatchScore $scores,
+        private readonly PerformanceTrend $trends,
     ) {}
 
     /**
@@ -82,6 +86,67 @@ final class DiscordMessages
     }
 
     /**
+     * The Monday summary: climber, standout games and awards of the last 7 days.
+     * Null when nobody played, so there is nothing to say.
+     *
+     * @param  array{best: list<array<string, mixed>>, awards: list<array<string, mixed>>, games: int}  $weekly  WeeklyHighlights::build()
+     * @param  array{player: Player, gain: int, from: string, to: string}|null  $climber  ClimberOfTheWeek::climber()
+     * @return array<string, mixed>|null
+     */
+    public function weekly(array $weekly, ?array $climber, RankedQueue $queue): ?array
+    {
+        if ($weekly['games'] === 0) {
+            return null;
+        }
+
+        $fields = [];
+
+        if ($climber !== null) {
+            $fields[] = [
+                'name' => '🧗 Top climber',
+                'value' => sprintf('**%s** +%d LP di %s (%s → %s)', $this->escape($climber['player']->name), $climber['gain'], $queue->label(), $climber['from'], $climber['to']),
+            ];
+        }
+
+        if ($weekly['best'] !== []) {
+            $fields[] = [
+                'name' => '⭐ Game menonjol',
+                'value' => collect($weekly['best'])->map(function (array $item) {
+                    $g = $item['game'];
+
+                    return sprintf(
+                        '**%s** · %s · %s (%s) %d/%d/%d · skor %d%s',
+                        $item['label'],
+                        $this->escape($g['player']->name),
+                        $this->escape($g['champion_name']),
+                        $g['win'] ? 'menang' : 'kalah',
+                        $g['kills'], $g['deaths'], $g['assists'],
+                        $g['score'],
+                        $g['badge'] ? " ({$g['badge']})" : '',
+                    );
+                })->implode("\n"),
+            ];
+        }
+
+        if ($weekly['awards'] !== []) {
+            $fields[] = [
+                'name' => '🏆 Penghargaan',
+                'value' => collect($weekly['awards'])
+                    ->map(fn (array $award) => sprintf('**%s**: %s (%s)', $award['title'], $this->escape($award['player']->name), $award['value']))
+                    ->implode("\n"),
+            ];
+        }
+
+        return $this->embed([
+            'title' => '📅 Rangkuman minggu ini',
+            'description' => "{$weekly['games']} game dimainkan dalam ".WeeklyHighlights::DAYS.' hari terakhir.',
+            'color' => self::AMBER,
+            'url' => $this->siteUrl('leaderboard', []),
+            'fields' => $fields,
+        ]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function winStreak(Player $player, int $streak): array
@@ -116,6 +181,22 @@ final class DiscordMessages
             ),
             'color' => $promoted ? self::GREEN : self::RED,
             'url' => $this->siteUrl('players.show', ['player' => $event->player->id, 'queue' => $event->queue->slug()]),
+        ]);
+    }
+
+    /**
+     * The Riot API key was rejected (expired or invalid). Sent once per episode.
+     *
+     * @return array<string, mixed>
+     */
+    public function keyRejected(int $status): array
+    {
+        return $this->embed([
+            'title' => '⚠️ API key Riot ditolak',
+            'description' => "Riot menjawab HTTP {$status}: key kedaluwarsa atau tidak valid. Sinkronisasi rank dan match berhenti sampai key diganti.\n"
+                .'Ambil key baru di developer.riotgames.com, isi `RIOT_API_KEY` di file `.env`, lalu jalankan sinkron lagi dari halaman admin.',
+            'color' => self::RED,
+            'url' => $this->siteUrl('admin.dashboard', []),
         ]);
     }
 
@@ -171,6 +252,23 @@ final class DiscordMessages
 
         if ($score !== null) {
             $lines[] = '🏅 '.($score['badge'] ? "**{$score['badge']}** · " : '')."skor {$score['score']}/100";
+        }
+
+        // The rate that moved the most over the last games, when it moved enough to be news.
+        $trend = $this->trends->forPlayer($p->player_id);
+        $notable = $trend !== null ? $this->trends->notable($trend) : null;
+
+        if ($notable !== null) {
+            $lines[] = sprintf(
+                '%s *%s %s %d%% jadi %s dalam %d game terakhir (sebelumnya %s)*',
+                $notable['change'] > 0 ? '📈' : '📉',
+                $notable['label'],
+                $notable['change'] > 0 ? 'naik' : 'turun',
+                abs($notable['change']),
+                Format::number($notable['recent'], $notable['decimals']),
+                $trend['recent_games'],
+                Format::number($notable['before'], $notable['decimals']),
+            );
         }
 
         return implode("\n", $lines);

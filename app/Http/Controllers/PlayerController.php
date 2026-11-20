@@ -8,6 +8,7 @@ use App\Models\Player;
 use App\Services\Stats\LpHistory;
 use App\Services\Stats\PairStats;
 use App\Services\Stats\PerformanceStats;
+use App\Services\Stats\PerformanceTrend;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -17,7 +18,7 @@ class PlayerController extends Controller
 
     private const TOP_CHAMPIONS = 5;
 
-    public function __invoke(Request $request, Player $player, PerformanceStats $stats, LpHistory $lpHistory, PairStats $pairStats): View
+    public function __invoke(Request $request, Player $player, PerformanceStats $stats, LpHistory $lpHistory, PairStats $pairStats, PerformanceTrend $trend): View
     {
         // Null = every tracked game mode together.
         $queue = MatchQueue::fromSlug($request->query('queue'));
@@ -44,7 +45,9 @@ class PlayerController extends Controller
                 ->orderByDesc('id')
                 ->first(),
             'stats' => $stats->forPlayer($player->id, $queue),
+            'trend' => $trend->forPlayer($player->id, $queue),
             'topChampions' => $stats->topChampions($player->id, $queue, self::TOP_CHAMPIONS),
+            'roles' => $stats->roles($player->id, $queue),
             'recentMatches' => $stats->recentMatches($player->id, $queue, self::RECENT_MATCHES),
             'lpChart' => $rankQueue ? $lpHistory->chartData(collect([$player]), $rankQueue) : null,
         ]);

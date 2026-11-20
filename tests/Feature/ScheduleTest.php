@@ -43,4 +43,13 @@ class ScheduleTest extends TestCase
         $this->assertSame('*/30 * * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
     }
+
+    public function test_the_weekly_discord_summary_goes_out_on_monday_morning(): void
+    {
+        $event = $this->scheduledEvent('discord:weekly');
+
+        $this->assertNotNull($event);
+        $this->assertSame('0 9 * * 1', $event->expression);
+        $this->assertTrue($event->withoutOverlapping);
+    }
 }

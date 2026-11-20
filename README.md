@@ -57,8 +57,16 @@ Every stored game of the group, newest first and grouped by day, with each playe
 
 - **LP over time** from stored rank snapshots (a line chart of the climb)
 - Averages: KDA, CS/min, damage/min, gold/min and vision/min
-- Top champions, recent matches, and the record with every friend, both on the same team and against each other
+- **Performance trend**: the last 10 games against the up to 40 games before them for KDA, CS/min, damage/min, vision/min and winrate, with the change in percent
+- **Lanes**: games, share, KDA and winrate per lane
+- Top champions, recent matches (with a link to every match of the player), and the record with every friend, both on the same team and against each other
 - Filter by game mode: All, Solo/Duo, Flex, Normal Draft, ARAM and ARAM Mayhem
+
+### Best duos
+
+<img src="docs/screenshots/duos.png" alt="Duo ranking with the most played duo and biggest rivalry" width="860">
+
+Pairs of friends ranked by their winrate on the same team (at least 3 games together), with their record against each other, the **most played duo** and the **biggest rivalry**. Filter by game mode.
 
 ### Compare 2 to 5 players
 
@@ -83,17 +91,22 @@ LP chart of everyone in one graph, a radar chart (KDA, CS/min, damage/min, visio
 
 ### Admin area
 
-A **Login Admin** button leads to a small admin area where the admin can add a friend by Riot ID (`Name#TAG`), change nicknames and hide or show players on the leaderboard. Admin accounts are created only from the command line, there is no sign-up page.
+A **Login Admin** button leads to a small admin area where the admin can add a friend by Riot ID (`Name#TAG`), change nicknames and hide or show players on the leaderboard. A **Sinkron sekarang** button fetches ranks, matches and timelines in the background without waiting for the schedule (it also starts by itself after adding a friend). Admin accounts are created only from the command line, there is no sign-up page.
 
 ### Discord notifications
 
 Optional. A webhook posts a message when a match of the group ends, when someone is promoted or demoted, and on win streaks (3, 5, 7, 10, 15 and 20 games).
 
-The match message has one block per tracked player: champion, lane and the champion of the lane opponent, K/D/A, KDA, CS/min, kill participation, damage, and the 0 to 100 score with an MVP or ACE badge. The title shows the result and game mode, the footer the duration and patch.
+The match message has one block per tracked player: champion, lane and the champion of the lane opponent, K/D/A, KDA, CS/min, kill participation, damage, and the 0 to 100 score with an MVP or ACE badge. When a rate moved by 15% or more over the last 10 games, a line says so (for example "CS/min up 226% to 6.0 over the last 10 games, was 1.8"). The title shows the result and game mode, the footer the duration and patch.
+
+Two more messages:
+
+- **Weekly summary**, every Monday at 09:00: the top climber, the standout games and the awards of the past 7 days. Send it by hand with `php artisan discord:weekly`.
+- **API key warning**: when Riot rejects the key, Discord hears about it once (not every 15 minutes) and the admin page shows a red banner until the key works again.
 
 ### Made for phones too
 
-Dark theme and a responsive layout that works on a small screen. After an update, run `php artisan migrate` to add the new columns.
+Dark theme and a responsive layout that works on a small screen. Links to the site show a card with the logo when shared in Discord, WhatsApp and the like (when the site is reachable from the internet). After an update, run `php artisan migrate` to add the new columns.
 
 <p align="center">
   <img src="docs/screenshots/mobile.png" alt="Leaderboard and match page on a phone" width="560">
@@ -206,7 +219,9 @@ Which game modes are fetched is set in `config/services.php` (`riot.tracked_queu
 | `riot:sync-ranks` | Stores a rank snapshot for every active player when something changed | every 15 min |
 | `riot:sync-matches {--count=20}` | Fetches new matches, and details only for matches not stored yet | every 30 min |
 | `riot:sync-timelines {--limit=30}` | Fetches item purchases, skill order and the per-minute gold, damage, exp and CS for stored matches (use `--limit=200` to catch up after an update) | at :15 and :45 |
+| `riot:sync-all` | Runs the three syncs above one after another (what the admin "Sinkron sekarang" button starts) | |
 | `discord:test` | Sends a test message to the configured webhook | |
+| `discord:weekly` | Sends the weekly summary to the webhook | Mondays 09:00 |
 | `admin:set-password {username}` | Creates an admin or changes their password | |
 
 ## Discord webhook
@@ -231,7 +246,7 @@ php artisan test
 vendor/bin/pint --test      # code style
 ```
 
-The suite has 380+ tests and runs on in-memory SQLite (the `pdo_sqlite` PHP extension must be enabled). The Riot API is always faked, so tests never use your real key.
+The suite has 420+ tests and runs on in-memory SQLite (the `pdo_sqlite` PHP extension must be enabled). The Riot API is always faked, so tests never use your real key.
 
 ## Project layout
 
@@ -242,7 +257,8 @@ app/
 ├── Services/
 │   ├── Riot/                RiotClient, account, league, match and Data Dragon services
 │   ├── Stats/               leaderboard, KDA and per-minute stats, duo / head-to-head, match score,
-│   │                        weekly highlights, role coverage, match metrics
+│   │                        weekly highlights, role coverage, match metrics, performance trend
+│   ├── Sync/                background runner and status of the admin "sync now" button
 │   ├── Players/             PlayerRegistrar (shared by the command and the admin page)
 │   └── Discord/             webhook client and message builders
 ├── Events/ + Listeners/     match recorded, rank changed
