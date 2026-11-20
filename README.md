@@ -192,6 +192,10 @@ php artisan migrate:fresh --seed --seeder=DemoDataSeeder
 php artisan serve
 ```
 
+### Run it on a server
+
+For a site that stays online 24/7, follow [docs/DEPLOY.md](docs/DEPLOY.md) (Ubuntu VPS with Nginx, PHP 8.3-FPM and MySQL, in Indonesian). The `deploy/` folder has an Nginx config, a cron line for the scheduler and an update script, and `.env.production.example` is the starting point for the server's `.env`.
+
 ### Share it with friends
 
 You can show your local site through a tunnel such as VS Code port forwarding (set the port visibility to **Public**) or ngrok.
@@ -220,6 +224,7 @@ Which game modes are fetched is set in `config/services.php` (`riot.tracked_queu
 | `riot:sync-matches {--count=20}` | Fetches new matches, and details only for matches not stored yet | every 30 min |
 | `riot:sync-timelines {--limit=30}` | Fetches item purchases, skill order and the per-minute gold, damage, exp and CS for stored matches (use `--limit=200` to catch up after an update) | at :15 and :45 |
 | `riot:sync-all` | Runs the three syncs above one after another (what the admin "Sinkron sekarang" button starts) | |
+| `db:backup` | Dumps the database to a compressed file in `storage/app/backups` and keeps the newest 14 | nightly 03:30 |
 | `discord:test` | Sends a test message to the configured webhook | |
 | `discord:weekly` | Sends the weekly summary to the webhook | Mondays 09:00 |
 | `admin:set-password {username}` | Creates an admin or changes their password | |

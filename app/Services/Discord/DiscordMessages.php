@@ -185,6 +185,20 @@ final class DiscordMessages
     }
 
     /**
+     * The nightly database backup failed.
+     *
+     * @return array<string, mixed>
+     */
+    public function backupFailed(string $reason): array
+    {
+        return $this->embed([
+            'title' => '⚠️ Backup database gagal',
+            'description' => "{$reason}\nJalankan `php artisan db:backup` dari terminal untuk melihat detailnya.",
+            'color' => self::RED,
+        ]);
+    }
+
+    /**
      * The Riot API key was rejected (expired or invalid). Sent once per episode.
      *
      * @return array<string, mixed>

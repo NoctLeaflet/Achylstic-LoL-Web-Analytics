@@ -1,0 +1,5 @@
+# The only cron entry the server needs. Laravel's scheduler (routes/console.php) then runs
+# the rank, match and timeline syncs, the weekly Discord summary and the nightly database backup.
+# Install it for the web user:  sudo crontab -u www-data -e   (and paste the line below)
+
+* * * * * cd /var/www/achylstic && php artisan schedule:run >> /dev/null 2>&1

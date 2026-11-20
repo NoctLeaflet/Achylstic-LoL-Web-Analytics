@@ -59,6 +59,12 @@
             </p>
             <p class="mt-1 text-xs text-slate-500">
                 Snapshot rank terakhir: {{ $lastRankSnapshot ? \Illuminate\Support\Carbon::parse($lastRankSnapshot)->diffForHumans() : 'belum ada' }}.
+                Backup database terakhir:
+                @if ($backup)
+                    {{ $backup['at']->diffForHumans() }} ({{ number_format($backup['size'] / 1024, 0, ',', '.') }} KB).
+                @else
+                    <span class="text-amber-300">belum ada</span> (jalankan <code>php artisan db:backup</code>).
+                @endif
             </p>
         </div>
 

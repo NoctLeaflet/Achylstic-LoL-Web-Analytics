@@ -43,3 +43,10 @@ Schedule::command('discord:weekly')
     ->weeklyOn(1, '09:00')
     ->withoutOverlapping(10)
     ->appendOutputTo(storage_path('logs/riot-sync.log'));
+
+// A nightly dump of the database (the LP history cannot be fetched from Riot again).
+// The newest BACKUP_KEEP dumps are kept in storage/app/backups.
+Schedule::command('db:backup')
+    ->dailyAt('03:30')
+    ->withoutOverlapping(30)
+    ->appendOutputTo(storage_path('logs/riot-sync.log'));

@@ -52,4 +52,13 @@ class ScheduleTest extends TestCase
         $this->assertSame('0 9 * * 1', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
     }
+
+    public function test_the_database_is_backed_up_every_night(): void
+    {
+        $event = $this->scheduledEvent('db:backup');
+
+        $this->assertNotNull($event);
+        $this->assertSame('30 3 * * *', $event->expression);
+        $this->assertTrue($event->withoutOverlapping);
+    }
 }
