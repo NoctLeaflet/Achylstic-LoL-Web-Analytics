@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\PlayerController as AdminPlayerController;
 use App\Http\Controllers\Admin\SyncController;
+use App\Http\Controllers\ChampionController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\DuoController;
 use App\Http\Controllers\HomeController;
@@ -20,6 +21,7 @@ Route::get('/players/{player}', PlayerController::class)->name('players.show');
 Route::get('/compare', CompareController::class)->name('compare');
 Route::get('/matches', MatchListController::class)->name('matches.index');
 Route::get('/duos', DuoController::class)->name('duos');
+Route::get('/champions', ChampionController::class)->name('champions');
 // Matches are addressed by their Riot match id, e.g. /matches/SG2_123456789
 Route::get('/matches/{gameMatch:match_id}', MatchController::class)->name('matches.show');
 

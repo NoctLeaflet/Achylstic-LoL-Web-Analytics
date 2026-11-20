@@ -62,6 +62,12 @@ Every stored game of the group, newest first and grouped by day, with each playe
 - Top champions, recent matches (with a link to every match of the player), and the record with every friend, both on the same team and against each other
 - Filter by game mode: All, Solo/Duo, Flex, Normal Draft, ARAM and ARAM Mayhem
 
+### Champions
+
+<img src="docs/screenshots/champions.png" alt="Champion table with most played, best winrate and best KDA" width="860">
+
+What the group plays: games, winrate and KDA per champion across all friends, who plays each one most, and highlights for the most played champion, best winrate and best KDA (at least 5 games). Sort by games, winrate or KDA and filter by game mode.
+
 ### Best duos
 
 <img src="docs/screenshots/duos.png" alt="Duo ranking with the most played duo and biggest rivalry" width="860">
