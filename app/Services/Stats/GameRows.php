@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 /**
  * Turns participant rows of tracked players into the flat "game" arrays the
  * game-row component shows: result, K/D/A, KDA, CS/min, kill participation and
- * the 0-100 score with its MVP/ACE badge (MatchScore).
+ * the score with its MVP/ACE badge (MatchScore).
  *
  * The rows need their gameMatch and player relations loaded. Scores and team
  * kills are looked up with two queries for all matches together.

@@ -111,4 +111,19 @@ return [
         'win_streak_milestones' => [3, 5, 7, 10, 15, 20],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Season recap
+    |--------------------------------------------------------------------------
+    |
+    | season_start: first day of the current ranked season (YYYY-MM-DD). The recap page counts
+    |               games from this day. Set SEASON_START in .env when a new season begins;
+    |               without it the recap starts on 1 January of the current year.
+    |
+    */
+
+    'recap' => [
+        'season_start' => env('SEASON_START'),
+    ],
+
 ];

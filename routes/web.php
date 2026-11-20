@@ -12,12 +12,14 @@ use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\MatchController;
 use App\Http\Controllers\MatchListController;
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\RecapController;
 use Illuminate\Support\Facades\Route;
 
 // Public pages only read from the database; every Riot API call happens in the background commands.
 Route::get('/', HomeController::class)->name('home');
 Route::get('/leaderboard', LeaderboardController::class)->name('leaderboard');
 Route::get('/players/{player}', PlayerController::class)->name('players.show');
+Route::get('/players/{player}/recap', RecapController::class)->name('players.recap');
 Route::get('/compare', CompareController::class)->name('compare');
 Route::get('/matches', MatchListController::class)->name('matches.index');
 Route::get('/duos', DuoController::class)->name('duos');
@@ -39,6 +41,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('sync', [SyncController::class, 'store'])->name('sync');
         Route::post('players', [AdminPlayerController::class, 'store'])->name('players.store');
         Route::patch('players/{player}', [AdminPlayerController::class, 'update'])->name('players.update');
+        Route::patch('players/{player}/platform', [AdminPlayerController::class, 'updatePlatform'])->name('players.platform');
+        Route::post('players/{player}/refresh', [AdminPlayerController::class, 'refreshRiotId'])->name('players.refresh');
+        Route::delete('players/{player}', [AdminPlayerController::class, 'destroy'])->name('players.destroy');
         Route::patch('players/{player}/goal', [AdminPlayerController::class, 'updateGoal'])->name('players.goal');
         Route::patch('players/{player}/active', [AdminPlayerController::class, 'toggleActive'])->name('players.toggle');
     });

@@ -63,6 +63,7 @@ Every stored game of the group, newest first and grouped by day, with each playe
 - **Achievements**: 13 badges computed from stored data (100 and 500 games, 10 wins in a row, a deathless win, 20 kills, 25 assists, 100 vision score, 50 games on one champion, 20 different champions, and reaching Gold, Platinum, Emerald and Diamond)
 - **Champion mastery**: level and points of the top 10 champions, refreshed daily from Riot
 - **Live status**: a "Sedang main" badge (also on the leaderboard) while the player is in a game
+- **Season recap**: a shareable card (`/players/{id}/recap`) for the season, the last 90 or the last 30 days: games, winrate, hours played, KDA, MVP and ACE count, longest win streak, favourite champions and lane, Solo/Duo rank change, the best game and the achievements earned. Set `SEASON_START` in `.env` when a new season begins; take a screenshot of the card to share it as an image
 - Top champions, recent matches (with a link to every match of the player), and the record with every friend, both on the same team and against each other
 - Filter by game mode: All, Solo/Duo, Flex, Normal Draft, ARAM and ARAM Mayhem
 
@@ -88,7 +89,7 @@ LP chart of everyone in one graph, a radar chart (KDA, CS/min, damage/min, visio
 
 <img src="docs/screenshots/match.png" alt="Match scoreboard with scores, MVP and ACE badges" width="860">
 
-- Scoreboard of all 10 players with an own **0 to 100 score**, an **MVP** badge for the best player of the winning team and an **ACE** for the best of the losing team
+- Scoreboard of all 10 players with an own **score (normally 0 to 100, and more than 100 for an outstanding game)**, an **MVP** badge for the best player of the winning team and an **ACE** for the best of the losing team. MVP and ACE rows get a colour wash, a glow and a slow shimmer (it stops for people who prefer reduced motion), also in the match lists and on the player page
 - Click a player to open their **build**: item purchases by minute, skill order and runes
 - **Compare lane**: put each role against the same role of the other team in a radar chart and a metric table
 - **Metrics**: a pop-up line chart of **gold, damage, exp and CS** of all ten players after every minute; click a champion icon to show or hide a line
@@ -97,17 +98,17 @@ LP chart of everyone in one graph, a radar chart (KDA, CS/min, damage/min, visio
 
 <img src="docs/screenshots/metrics.png" alt="Metrics pop-up with a gold chart of all players" width="640">
 
-> The score is Achylstic's own formula (KDA, kill participation, damage, vision, gold and CS against the other nine players), not an official Riot rating.
+> The score is Achylstic's own formula, not an official Riot rating. It compares the player with the other nine on KDA, kill participation, damage, vision, gold and CS (up to 94 points), adds 6 for a win, and gives up to 30 bonus points for an absolutely outstanding game (high KDA, kill participation and damage share, or a deathless win), so the best possible score is 130.
 
 ### Admin area
 
-A **Login Admin** button leads to a small admin area where the admin can add a friend by Riot ID (`Name#TAG`), change nicknames and hide or show players on the leaderboard. A **Sinkron sekarang** button fetches ranks, matches and timelines in the background without waiting for the schedule (it also starts by itself after adding a friend). Admin accounts are created only from the command line, there is no sign-up page.
+A **Login Admin** button leads to a small admin area where the admin can add a friend by Riot ID (`Name#TAG`), change nicknames and hide or show players on the leaderboard. A **Sinkron sekarang** button fetches ranks, matches and timelines in the background without waiting for the schedule (it also starts by itself after adding a friend). Under **Lainnya** on each player the admin can also change the server, refresh the Riot ID after a rename, or delete the player for good (rank history and achievements go with them; the matches stay). Admin accounts are created only from the command line, there is no sign-up page.
 
 ### Discord notifications
 
 Optional. A webhook posts a message when a match of the group ends, when someone is promoted or demoted, and on win streaks (3, 5, 7, 10, 15 and 20 games).
 
-The match message has one block per tracked player: champion, lane and the champion of the lane opponent, K/D/A, KDA, CS/min, kill participation, damage, and the 0 to 100 score with an MVP or ACE badge. When a rate moved by 15% or more over the last 10 games, a line says so (for example "CS/min up 226% to 6.0 over the last 10 games, was 1.8"). The title shows the result and game mode, the footer the duration and patch.
+The match message has one block per tracked player: champion, lane and the champion of the lane opponent, K/D/A, KDA, CS/min, kill participation, damage, and the score (normally 0 to 100, and more than 100 for an outstanding game) with an MVP or ACE badge. When a rate moved by 15% or more over the last 10 games, a line says so (for example "CS/min up 226% to 6.0 over the last 10 games, was 1.8"). The title shows the result and game mode, the footer the duration and patch.
 
 More messages:
 
@@ -220,6 +221,7 @@ You can show your local site through a tunnel such as VS Code port forwarding (s
 
 | `.env` | Purpose |
 |---|---|
+| `SEASON_START` | First day of the current ranked season (`YYYY-MM-DD`) for the recap page. Empty means 1 January of this year. |
 | `RIOT_API_KEY` | Your Riot key. Development keys expire every 24 hours, and an expired key shows a clear "API key kedaluwarsa/invalid" message instead of failing silently. |
 | `RIOT_PLATFORM` | Default server for summoner and league data, for example `sg2`, `ph2`, `th2`, `tw2` or `vn2`. |
 | `RIOT_REGION` | Routing for match data, for example `sea`. |
@@ -236,6 +238,7 @@ Which game modes are fetched is set in `config/services.php` (`riot.tracked_queu
 | `riot:sync-ranks` | Stores a rank snapshot for every active player when something changed | every 15 min |
 | `riot:sync-matches {--count=20}` | Fetches new matches, and details only for matches not stored yet | every 30 min |
 | `riot:sync-timelines {--limit=30}` | Fetches item purchases, skill order and the per-minute gold, damage, exp and CS for stored matches (use `--limit=200` to catch up after an update) | at :15 and :45 |
+| `players:relink {--dry-run}` | Looks up every player's PUUID again from their Riot ID. Needed after switching to a Riot API key from another application, because PUUIDs are tied to the key (symptom: HTTP 400 on every player) | |
 | `riot:sync-live` | Checks which active players are in a game right now and announces new games in Discord | every 2 min |
 | `riot:sync-mastery` | Fetches the top 10 champion masteries of every active player | daily 04:00 |
 | `riot:sync-all` | Runs ranks, matches, timelines and mastery one after another (what the admin "Sinkron sekarang" button starts); a mastery failure does not fail the rest | |

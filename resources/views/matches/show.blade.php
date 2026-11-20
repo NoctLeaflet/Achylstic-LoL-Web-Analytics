@@ -66,7 +66,7 @@
          x-effect="document.body.classList.toggle('overflow-hidden', matchup !== null || metricsOpen)">
         <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p class="max-w-3xl text-xs text-slate-500">
-                Klik seorang pemain untuk melihat item, urutan skill, dan rune-nya. Skor 0-100 adalah penilaian kami dari KDA, partisipasi kill, damage, vision, gold, dan CS dibanding 9 pemain lain di match ini (bukan skor resmi Riot).
+                Klik seorang pemain untuk melihat item, urutan skill, dan rune-nya. Skor adalah penilaian kami dari KDA, partisipasi kill, damage, vision, gold, dan CS dibanding 9 pemain lain di match ini, normalnya 0-100 dan bisa lebih dari 100 untuk permainan luar biasa (bukan skor resmi Riot).
             </p>
 
             <div class="flex flex-wrap gap-2">
@@ -127,6 +127,8 @@
                                     @class([
                                         'cursor-pointer border-b border-slate-800/70 transition last:border-0 hover:bg-slate-800/50',
                                         'bg-sky-500/10' => $participant['player'] !== null,
+                                        'glow-row-mvp' => $participant['badge'] === 'MVP',
+                                        'glow-row-ace' => $participant['badge'] === 'ACE',
                                     ])>
                                     <td class="py-2.5 pl-4 pr-3">
                                         <div class="flex items-center gap-3">

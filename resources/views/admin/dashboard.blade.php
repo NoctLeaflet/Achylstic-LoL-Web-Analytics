@@ -21,6 +21,12 @@
         </p>
     @endif
 
+    @if ($errors->has('player'))
+        <p role="alert" class="mt-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+            {{ $errors->first('player') }}
+        </p>
+    @endif
+
     @if ($errors->has('display_name'))
         <p role="alert" class="mt-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
             {{ $errors->first('display_name') }}
@@ -209,6 +215,40 @@
                                 {{ $player->is_active ? 'Sembunyikan' : 'Tampilkan' }}
                             </button>
                         </form>
+
+                        {{-- Less common actions, kept out of the way --}}
+                        <details class="w-full basis-full text-sm">
+                            <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-300">Lainnya (server, Riot ID, hapus)</summary>
+                            <div class="mt-2 flex flex-wrap items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+                                <form method="POST" action="{{ route('admin.players.platform', $player) }}" class="flex items-center gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <label for="platform_{{ $player->id }}" class="text-xs text-slate-400">Server</label>
+                                    <select id="platform_{{ $player->id }}" name="platform" onchange="this.form.submit()"
+                                            class="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-white focus:border-sky-500 focus:outline-none">
+                                        @foreach ($platforms as $code => $label)
+                                            <option value="{{ $code }}" @selected($player->platform === $code)>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+
+                                <form method="POST" action="{{ route('admin.players.refresh', $player) }}">
+                                    @csrf
+                                    <button type="submit" class="rounded-md border border-slate-700 px-3 py-1 text-xs font-medium text-slate-200 hover:bg-slate-800">
+                                        Segarkan Riot ID dari Riot
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('admin.players.destroy', $player) }}"
+                                      onsubmit="return confirm('Hapus {{ e($player->name) }} secara permanen? Riwayat rank, pencapaian, dan target ikut hilang. Match tetap tersimpan. Ini tidak bisa dibatalkan.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="rounded-md border border-rose-500/40 px-3 py-1 text-xs font-medium text-rose-300 hover:bg-rose-500/10">
+                                        Hapus permanen
+                                    </button>
+                                </form>
+                            </div>
+                        </details>
                     </li>
                 @endforeach
             </ul>

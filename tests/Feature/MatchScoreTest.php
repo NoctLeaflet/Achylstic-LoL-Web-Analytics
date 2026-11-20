@@ -72,7 +72,7 @@ class MatchScoreTest extends TestCase
         $this->assertSame(2, collect($scores)->whereNotNull('badge')->count());
     }
 
-    public function test_scores_are_whole_numbers_between_0_and_100(): void
+    public function test_scores_are_whole_numbers_between_0_and_130(): void
     {
         [$match, $p] = $this->match([
             'p0' => ['kills' => 30, 'deaths' => 0, 'assists' => 20, 'total_damage_dealt_to_champions' => 60000, 'gold_earned' => 20000, 'vision_score' => 90, 'total_minions_killed' => 400],
@@ -82,8 +82,30 @@ class MatchScoreTest extends TestCase
         foreach ($this->score($p, $match) as $row) {
             $this->assertIsInt($row['score']);
             $this->assertGreaterThanOrEqual(0, $row['score']);
-            $this->assertLessThanOrEqual(100, $row['score']);
+            $this->assertLessThanOrEqual(130, $row['score']);
         }
+    }
+
+    public function test_an_outstanding_game_goes_past_100_but_an_average_one_does_not(): void
+    {
+        [$match, $p] = $this->match([
+            'p0' => ['kills' => 30, 'deaths' => 0, 'assists' => 20, 'total_damage_dealt_to_champions' => 60000, 'gold_earned' => 20000, 'vision_score' => 90, 'total_minions_killed' => 400],
+        ]);
+
+        $scores = $this->score($p, $match);
+
+        $this->assertGreaterThan(100, $scores[$p['p0']->id]['score']);
+        $this->assertLessThanOrEqual(130, $scores[$p['p0']->id]['score']);
+        $this->assertSame('MVP', $scores[$p['p0']->id]['badge']);
+        $this->assertLessThan(100, $scores[$p['p1']->id]['score']);
+    }
+
+    public function test_the_excellence_bonus_needs_absolutely_good_numbers(): void
+    {
+        // A 5/5/5 winner in an average match gets nothing extra: KDA 2, participation 40%, damage share 20%.
+        [$match, $p] = $this->match();
+
+        $this->assertSame(53, $this->score($p, $match)[$p['p0']->id]['score']);
     }
 
     public function test_the_dominant_winner_scores_100_and_the_worst_loser_scores_0(): void
@@ -183,7 +205,9 @@ class MatchScoreTest extends TestCase
 
         $scores = $this->scorer()->forMatch($participants, $match->game_duration);
 
-        $this->assertSame(53, $scores[$participants[0]->id]['score']);
+        // 53 for an exactly average winner, plus 14 because alone in the match that player has
+        // 100% kill participation (+8) and 100% damage share (+6).
+        $this->assertSame(67, $scores[$participants[0]->id]['score']);
         $this->assertSame('MVP', $scores[$participants[0]->id]['badge']);
     }
 

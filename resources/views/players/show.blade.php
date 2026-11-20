@@ -19,6 +19,7 @@
                     @endif
                     <span class="text-slate-600">·</span> {{ strtoupper($player->platform) }}
                 </p>
+                <a href="{{ route('players.recap', $player) }}" class="mt-1 inline-block text-xs font-medium text-indigo-300 hover:text-indigo-200">Lihat rekap season &rarr;</a>
                 @if ($liveGame)
                     <x-live-badge :game="$liveGame" class="mt-1" />
                 @endif
@@ -339,6 +340,8 @@
                         'border-l-slate-600' => $match['is_remake'],
                         'border-l-emerald-500' => ! $match['is_remake'] && $match['win'],
                         'border-l-rose-500' => ! $match['is_remake'] && ! $match['win'],
+                        'glow-mvp' => $match['badge'] === 'MVP',
+                        'glow-ace' => $match['badge'] === 'ACE',
                     ])>
                         {{-- Stretched link: the whole row opens the match detail. --}}
                         <a href="{{ route('matches.show', $match['match_id']) }}" class="absolute inset-0 rounded-xl" aria-label="Detail match {{ $match['champion_name'] }}, {{ $match['kills'] }}/{{ $match['deaths'] }}/{{ $match['assists'] }}"></a>

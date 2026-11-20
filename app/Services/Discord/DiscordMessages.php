@@ -311,7 +311,7 @@ final class DiscordMessages
         );
 
         if ($score !== null) {
-            $lines[] = '🏅 '.($score['badge'] ? "**{$score['badge']}** · " : '')."skor {$score['score']}/100";
+            $lines[] = '🏅 '.($score['badge'] ? "**{$score['badge']}** · " : '')."skor {$score['score']}";
         }
 
         // The rate that moved the most over the last games, when it moved enough to be news.

@@ -33,7 +33,7 @@ class DiscordMessagesTest extends TestCase
 
         $this->assertSame('✅ Menang · Solo/Duo', $embed['title']);
         $this->assertSame(
-            "**Ayam** · Ahri (Mid)\n**8/2/10** · 9.00 KDA · 10.0 CS/min · 300 CS\n100% kill participation · 20.0k damage\n🏅 **MVP** · skor 53/100",
+            "**Ayam** · Ahri (Mid)\n**8/2/10** · 9.00 KDA · 10.0 CS/min · 300 CS\n100% kill participation · 20.0k damage\n🏅 **MVP** · skor 75",
             $embed['description'],
         );
         $this->assertSame(0x22C55E, $embed['color']);

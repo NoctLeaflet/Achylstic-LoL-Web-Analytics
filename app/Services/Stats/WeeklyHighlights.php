@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
  * "Best this week" and "This week": what the tracked players did in the last 7 days,
  * over every stored game mode (remakes excluded).
  *
- * Both are built from one list of games, each with the 0-100 score of MatchScore.
+ * Both are built from one list of games, each with the score of MatchScore.
  *
  *  - best(): four single games worth showing (best-rated win, most assists in a win,
  *    most takedowns in one game, lowest-rated loss).

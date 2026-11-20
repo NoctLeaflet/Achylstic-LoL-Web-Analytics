@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Services\Players\PlayerRegistrar;
 use App\Services\Players\PlayerRegistrationException;
+use App\Services\Riot\AccountService;
 use App\Services\Riot\Exceptions\RiotApiException;
 use App\Services\Stats\RankGoal;
 use App\Services\Sync\BackgroundRunner;
@@ -75,6 +76,51 @@ class PlayerController extends Controller
         $player->update(['display_name' => $name !== '' ? $name : null]);
 
         return redirect()->route('admin.dashboard')->with('status', "Nama panggilan {$player->riot_id} disimpan.");
+    }
+
+    /** Move a player to another server (platform). Only changes where their profile and rank are looked up. */
+    public function updatePlatform(Request $request, Player $player): RedirectResponse
+    {
+        $data = $request->validate([
+            'platform' => ['required', Rule::in(array_keys(config('services.riot.platforms')))],
+        ]);
+
+        $player->update(['platform' => $data['platform']]);
+
+        return redirect()->route('admin.dashboard')->with('status', "Server {$player->name} diganti ke ".strtoupper($data['platform']).'.');
+    }
+
+    /** Fetch the player's current Riot ID from Riot (they may have renamed themselves). */
+    public function refreshRiotId(Player $player, AccountService $accounts): RedirectResponse
+    {
+        try {
+            $account = $accounts->findByPuuid($player->puuid);
+        } catch (RiotApiException $e) {
+            return redirect()->route('admin.dashboard')->withErrors(['player' => "{$player->riot_id}: {$e->getMessage()}"]);
+        }
+
+        if ($account === null) {
+            return redirect()->route('admin.dashboard')->withErrors(['player' => "Riot tidak mengenal akun {$player->riot_id} lagi (PUUID tidak cocok dengan API key ini)."]);
+        }
+
+        $old = $player->riot_id;
+        $player->update(['game_name' => $account['game_name'], 'tag_line' => $account['tag_line']]);
+
+        return redirect()->route('admin.dashboard')->with('status', $old === $player->riot_id
+            ? "Riot ID {$player->riot_id} masih sama."
+            : "Riot ID diperbarui: {$old} menjadi {$player->riot_id}.");
+    }
+
+    /**
+     * Delete a player for good: their rank history, achievements and live status go with them.
+     * Matches stay (the other nine players are still in them); only the link to this player is cut.
+     */
+    public function destroy(Player $player): RedirectResponse
+    {
+        $name = $player->riot_id;
+        $player->delete();
+
+        return redirect()->route('admin.dashboard')->with('status', "{$name} dihapus permanen.");
     }
 
     /** Set (or clear) the Solo/Duo rank the player is aiming for. */

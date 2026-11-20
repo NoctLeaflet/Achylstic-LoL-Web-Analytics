@@ -7,7 +7,7 @@ use App\Models\MatchParticipant;
 use Illuminate\Support\Collection;
 
 /**
- * A 0-100 performance score for every participant of a match, plus the MVP and
+ * A performance score (usually 0-100, up to 130 for an outstanding game) for every participant of a match, plus the MVP and
  * ACE badges.
  *
  * This is our own formula, not an official Riot number and not the proprietary
@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
  * vision 25% · damage 10% · gold 5% · CS 5%). Without that, a good support would
  * always score far below the carries of their team.
  *
- * The weighted sum is scaled to 94 points and winners get 6 extra, so a loss
+ * The weighted sum is scaled to 94 points, winners get 6 extra and an outstanding game earns up to 30 more (excellenceBonus), so a loss
  * can still score high but a win always counts for something. Because the
  * comparison is inside one match, a score says "how well did this player do in
  * this game", and the badges follow from it:
@@ -105,7 +105,10 @@ final class MatchScore
                 $base += $weight * ($max > $min ? ($metrics[$p->id][$metric] - $min) / ($max - $min) : 0.5);
             }
 
-            $scores[$p->id] = max(0, min(100, (int) round($base * self::SCALE + ($p->win ? self::WIN_BONUS : 0))));
+            // No upper clamp: an outstanding game can go past 100 (see excellenceBonus()).
+            $scores[$p->id] = max(0, (int) round(
+                $base * self::SCALE + ($p->win ? self::WIN_BONUS : 0) + $this->excellenceBonus($p, $metrics[$p->id]),
+            ));
             $kda[$p->id] = $metrics[$p->id]['kda'];
         }
 
@@ -117,6 +120,27 @@ final class MatchScore
             'score' => $scores[$p->id],
             'badge' => $badges[$p->id] ?? null,
         ]])->all();
+    }
+
+    /**
+     * Extra points for a game that is good in absolute terms, not only better than the other nine
+     * players. Up to 30 in total, so the best possible score is 130:
+     *
+     *   KDA above 5 ............ up to 10 (reaches 10 at a KDA of 10)
+     *   kill participation > 70% up to 8  (reaches 8 at 100%)
+     *   damage share > 30% ..... up to 6  (reaches 6 at 60%)
+     *   deathless, 8+ takedowns   6
+     *
+     * @param  array<string, float>  $metrics
+     */
+    private function excellenceBonus(MatchParticipant $p, array $metrics): float
+    {
+        $kda = min(max(($metrics['kda'] - 5) * 2, 0), 10);
+        $participation = min(max(($metrics['kill_participation'] - 0.7) / 0.3 * 8, 0), 8);
+        $damage = min(max(($metrics['damage_share'] - 0.3) / 0.3 * 6, 0), 6);
+        $deathless = $p->deaths === 0 && $p->kills + $p->assists >= 8 ? 6 : 0;
+
+        return $kda + $participation + $damage + $deathless;
     }
 
     /**

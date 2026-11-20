@@ -21,3 +21,67 @@
 [x-cloak] {
     display: none !important;
 }
+
+/*
+ * MVP / ACE highlight for a game row: a colour wash, a glow around the border and a slow
+ * shimmer that sweeps across. MVP is blue to violet with a golden glow, ACE is rose to violet
+ * with a rose glow. The shimmer stops for people who asked for less motion.
+ */
+.glow-mvp,
+.glow-ace {
+    position: relative;
+    overflow: hidden;
+}
+
+.glow-mvp {
+    background-image: linear-gradient(100deg, rgba(37, 99, 235, 0.32), rgba(124, 58, 237, 0.3) 55%, rgba(245, 158, 11, 0.24));
+    border-color: rgba(251, 191, 36, 0.55) !important;
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.22), 0 0 22px rgba(251, 191, 36, 0.26), inset 0 0 34px rgba(124, 58, 237, 0.2);
+}
+
+.glow-ace {
+    background-image: linear-gradient(100deg, rgba(225, 29, 72, 0.3), rgba(124, 58, 237, 0.28) 55%, rgba(56, 189, 248, 0.2));
+    border-color: rgba(251, 113, 133, 0.55) !important;
+    box-shadow: 0 0 0 1px rgba(251, 113, 133, 0.22), 0 0 22px rgba(244, 63, 94, 0.26), inset 0 0 34px rgba(124, 58, 237, 0.18);
+}
+
+.glow-mvp::after,
+.glow-ace::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.13) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: glow-sweep 4.5s ease-in-out infinite;
+}
+
+@keyframes glow-sweep {
+    0%,
+    55% {
+        transform: translateX(-120%);
+    }
+
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .glow-mvp::after,
+    .glow-ace::after {
+        animation: none;
+        display: none;
+    }
+}
+
+/* The same colours for a table row of the match scoreboard (no shimmer: rows cannot clip it). */
+.glow-row-mvp {
+    background-image: linear-gradient(100deg, rgba(37, 99, 235, 0.3), rgba(124, 58, 237, 0.26) 55%, rgba(245, 158, 11, 0.2));
+    box-shadow: inset 3px 0 0 rgba(251, 191, 36, 0.9), inset 0 0 26px rgba(251, 191, 36, 0.16);
+}
+
+.glow-row-ace {
+    background-image: linear-gradient(100deg, rgba(225, 29, 72, 0.28), rgba(124, 58, 237, 0.24) 55%, rgba(56, 189, 248, 0.18));
+    box-shadow: inset 3px 0 0 rgba(251, 113, 133, 0.9), inset 0 0 26px rgba(244, 63, 94, 0.16);
+}
