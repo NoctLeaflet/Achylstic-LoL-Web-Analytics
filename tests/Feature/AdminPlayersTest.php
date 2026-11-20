@@ -103,7 +103,7 @@ class AdminPlayersTest extends TestCase
 
         $this->post('/admin/players', ['riot_id' => 'Hide on bush#KR1', 'nickname' => 'Ayam', 'platform' => 'sg2']);
 
-        $this->get('/')->assertOk()->assertSee('Ayam')->assertSee('Hide on bush#KR1')->assertSee('Unranked');
+        $this->get('/leaderboard')->assertOk()->assertSee('Ayam')->assertSee('Hide on bush#KR1')->assertSee('Unranked');
     }
 
     public function test_a_game_name_with_spaces_and_a_hash_is_split_on_the_last_hash(): void
@@ -274,12 +274,12 @@ class AdminPlayersTest extends TestCase
             ->assertSessionHas('status');
         $this->assertFalse($player->fresh()->is_active);
 
-        $this->get('/')->assertSee('Other Olga')->assertDontSee('Visible Vicky');
+        $this->get('/leaderboard')->assertSee('Other Olga')->assertDontSee('Visible Vicky');
         // Data stays and the admin can still see them to bring them back.
         $this->get('/admin')->assertSee('Visible Vicky')->assertSee('Tampilkan');
 
         $this->patch("/admin/players/{$player->id}/active");
         $this->assertTrue($player->fresh()->is_active);
-        $this->get('/')->assertSee('Visible Vicky');
+        $this->get('/leaderboard')->assertSee('Visible Vicky');
     }
 }

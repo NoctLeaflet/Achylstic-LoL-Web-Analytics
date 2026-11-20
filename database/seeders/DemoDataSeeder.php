@@ -187,8 +187,39 @@ class DemoDataSeeder extends Seeder
                 ];
             }
 
+            // Per-minute running totals, as the match timeline would give them.
+            $rows = array_map(fn (array $row) => $row + ['metrics' => $remake ? null : $this->curves($row, $duration)], $rows);
+
             $match->participants()->createMany($rows);
         }
+    }
+
+    /**
+     * Made-up growth curves that end at the totals of the finished game.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, list<int>>
+     */
+    private function curves(array $row, int $duration): array
+    {
+        $frames = intdiv($duration, 60) + 1;
+        $finals = [
+            'gold' => $row['gold_earned'],
+            'damage' => $row['total_damage_dealt_to_champions'],
+            'xp' => (int) ($duration / 60 * mt_rand(380, 520)),
+            'cs' => $row['total_minions_killed'] + $row['neutral_minions_killed'],
+        ];
+        $shape = mt_rand(90, 130) / 100;
+        $series = [];
+
+        foreach ($finals as $key => $final) {
+            for ($minute = 0; $minute < $frames; $minute++) {
+                $progress = $minute / ($frames - 1);
+                $series[$key][] = (int) round($final * ($progress ** $shape) * (1 + mt_rand(-15, 15) / 1000));
+            }
+        }
+
+        return $series;
     }
 
     private function score(string $tier, string $division, int $lp): int

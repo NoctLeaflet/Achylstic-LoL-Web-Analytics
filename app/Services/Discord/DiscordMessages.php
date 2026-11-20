@@ -7,8 +7,10 @@ use App\Events\RankChanged;
 use App\Models\GameMatch;
 use App\Models\MatchParticipant;
 use App\Models\Player;
+use App\Services\Stats\MatchScore;
 use App\Services\Stats\RankScore;
 use App\Support\Format;
+use Illuminate\Support\Collection;
 
 /**
  * Builds the Discord embeds. Pure formatting: nothing is sent from here.
@@ -37,6 +39,10 @@ final class DiscordMessages
         'UTILITY' => 'Support',
     ];
 
+    public function __construct(
+        private readonly MatchScore $scores,
+    ) {}
+
     /**
      * A finished match with its tracked players. Null when none of the
      * participants is one of our players.
@@ -51,6 +57,9 @@ final class DiscordMessages
             return null;
         }
 
+        $everyone = $match->participants()->get();
+        $scores = $this->scores->forMatch($everyone, $match->game_duration);
+
         $wins = $participants->where('win', true)->count();
         $allWon = $wins === $participants->count();
         $allLost = $wins === 0;
@@ -64,7 +73,7 @@ final class DiscordMessages
 
         return $this->embed([
             'title' => "{$title} · {$queue}",
-            'description' => $participants->map(fn (MatchParticipant $p) => $this->participantLine($p, $participants->count() > 1 && ! $allWon && ! $allLost))->implode("\n"),
+            'description' => $participants->map(fn (MatchParticipant $p) => $this->participantBlock($p, $everyone, $match, $scores, $participants->count() > 1 && ! $allWon && ! $allLost))->implode("\n\n"),
             'color' => $color,
             'url' => $this->siteUrl('matches.show', ['gameMatch' => $match->match_id]),
             'timestamp' => $match->game_start_at->copy()->addSeconds($match->game_duration)->toIso8601String(),
@@ -122,24 +131,55 @@ final class DiscordMessages
         ]);
     }
 
-    private function participantLine(MatchParticipant $p, bool $showResult): string
+    /**
+     * One block per tracked player: champion and lane opponent, K/D/A, the per-minute
+     * and per-game numbers, the score of MatchScore (with MVP/ACE).
+     *
+     * @param  Collection<int, MatchParticipant>  $everyone  all participants of the match
+     */
+    private function participantBlock(MatchParticipant $p, Collection $everyone, GameMatch $match, array $scores, bool $showResult): string
     {
+        $minutes = max($match->game_duration, 1) / 60;
         $cs = $p->total_minions_killed + $p->neutral_minions_killed;
-        $kda = round(($p->kills + $p->assists) / max($p->deaths, 1), 2);
+        $takedowns = $p->kills + $p->assists;
+        $kda = round($takedowns / max($p->deaths, 1), 2);
+        $teamKills = max((int) $everyone->where('team_id', $p->team_id)->sum('kills'), 1);
         $position = self::POSITIONS[$p->team_position] ?? null;
+        $opponent = $p->team_position
+            ? $everyone->first(fn (MatchParticipant $o) => $o->team_id !== $p->team_id && $o->team_position === $p->team_position)
+            : null;
 
-        return sprintf(
-            '%s**%s** · %s%s · %d/%d/%d · %s KDA · %d CS',
+        $score = $scores[$p->id] ?? null;
+        $lines = [sprintf(
+            '%s**%s** · %s%s%s',
             $showResult ? ($p->win ? '✅ ' : '❌ ') : '',
             $this->escape($p->player->name),
             $this->escape($p->champion_name),
             $position ? " ({$position})" : '',
-            $p->kills,
-            $p->deaths,
-            $p->assists,
-            Format::number($kda, 2),
-            $cs,
+            $opponent ? ' vs '.$this->escape($opponent->champion_name) : '',
+        )];
+
+        $lines[] = sprintf(
+            '**%d/%d/%d** · %s KDA · %s CS/min · %d CS',
+            $p->kills, $p->deaths, $p->assists, Format::number($kda, 2), Format::number($cs / $minutes, 1), $cs,
         );
+        $lines[] = sprintf(
+            '%d%% kill participation · %s damage',
+            min(100, round($takedowns / $teamKills * 100)),
+            $this->compact($p->total_damage_dealt_to_champions),
+        );
+
+        if ($score !== null) {
+            $lines[] = '🏅 '.($score['badge'] ? "**{$score['badge']}** · " : '')."skor {$score['score']}/100";
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /** 48623 -> "48.6k" */
+    private function compact(int $value): string
+    {
+        return $value >= 1000 ? Format::number($value / 1000, 1).'k' : (string) $value;
     }
 
     private function patch(?string $version): string

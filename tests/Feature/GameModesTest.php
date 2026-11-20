@@ -335,7 +335,7 @@ class GameModesTest extends TestCase
 
     public function test_the_leaderboard_stays_ranked_only(): void
     {
-        $this->get('/')->assertOk()
+        $this->get('/leaderboard')->assertOk()
             ->assertSee('Solo/Duo')
             ->assertSee('Flex')
             ->assertDontSee('ARAM')

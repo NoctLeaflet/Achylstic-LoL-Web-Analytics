@@ -92,7 +92,8 @@ class DiscordNotificationsTest extends TestCase
         $this->assertCount(1, $messages);
         $this->assertCount(1, $messages[0]['embeds']);
         $this->assertSame('✅ Menang · Solo/Duo', $messages[0]['embeds'][0]['title']);
-        $this->assertStringContainsString('**Ayam** · Champ0 (Top) · 1/2/5', $messages[0]['embeds'][0]['description']);
+        $this->assertStringContainsString('**Ayam** · Champ0 (Top) vs Champ5', $messages[0]['embeds'][0]['description']);
+        $this->assertStringContainsString('**1/2/5** · 3.00 KDA', $messages[0]['embeds'][0]['description']);
     }
 
     public function test_storing_the_same_match_again_does_not_announce_it_again(): void

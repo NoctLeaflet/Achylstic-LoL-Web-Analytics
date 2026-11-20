@@ -32,7 +32,10 @@ class DiscordMessagesTest extends TestCase
         $embed = $this->messages()->match($match);
 
         $this->assertSame('✅ Menang · Solo/Duo', $embed['title']);
-        $this->assertSame('**Ayam** · Ahri (Mid) · 8/2/10 · 9.00 KDA · 300 CS', $embed['description']);
+        $this->assertSame(
+            "**Ayam** · Ahri (Mid)\n**8/2/10** · 9.00 KDA · 10.0 CS/min · 300 CS\n100% kill participation · 20.0k damage\n🏅 **MVP** · skor 53/100",
+            $embed['description'],
+        );
         $this->assertSame(0x22C55E, $embed['color']);
         $this->assertSame('30:00 · Patch 16.1', $embed['footer']['text']);
         // The timestamp is the moment the game ended.

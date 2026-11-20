@@ -1,10 +1,10 @@
 <div align="center">
 
-# Achylstic
+<img src="public/images/logo.webp" alt="Achylstic, League of Legends Analysis" width="420">
 
 **Track the League of Legends accounts of your friend group, then see who is really carrying.**
 
-Leaderboard, LP history, head-to-head records and match breakdowns, built on the official Riot Games API.
+Leaderboard, weekly highlights, LP history, head-to-head records and match breakdowns, built on the official Riot Games API.
 
 ![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
@@ -13,7 +13,7 @@ Leaderboard, LP history, head-to-head records and match breakdowns, built on the
 ![Alpine.js](https://img.shields.io/badge/Alpine.js-3-8BC0D0?logo=alpinedotjs&logoColor=white)
 ![Chart.js](https://img.shields.io/badge/Chart.js-4-FF6384?logo=chartdotjs&logoColor=white)
 
-<img src="docs/screenshots/leaderboard.png" alt="Leaderboard with climber of the week" width="860">
+<img src="docs/screenshots/home.png" alt="Landing page that introduces the app" width="860">
 
 <sub>Screenshots use made-up demo players, not real accounts.</sub>
 
@@ -31,9 +31,25 @@ Inspired by the guild pages of [dorans.bot](https://dorans.bot) and the match pa
 
 ## Features
 
+### Landing page
+
+The home page introduces the app with its logo, the number of tracked players and matches, what you can see here and how it works, and leads to the leaderboard.
+
 ### Leaderboard
 
-Everyone in the group ranked by tier, division and LP. Switch between Solo/Duo and Flex, see winrate, games played, the LP gained over the last 7 days and the **Climber of the Week**.
+<img src="docs/screenshots/leaderboard.png" alt="Leaderboard with weekly highlights and role coverage" width="860">
+
+Everyone in the group ranked by tier, division and LP. Switch between Solo/Duo and Flex, see winrate, games played, the LP gained over the last 7 days and the **Climber of the Week**. Below the table:
+
+- **Best this week**: the standout games of the last 7 days (best-rated win, most assists in a win, most takedowns in a game, lowest-rated loss). A dropdown limits them to one game mode.
+- **This week**: awards for players with at least 3 games (The Carry, One-Trick Pony, Jack of All Trades, Vision Enthusiast).
+- **Role Coverage**: who mains and who fills each lane, and which lanes the group is missing.
+
+### Matches
+
+<img src="docs/screenshots/matches.png" alt="Match list with most played champions and roles" width="860">
+
+Every stored game of the group, newest first and grouped by day, with each player's champion, K/D/A, KDA, CS/min, kill participation and score. Filter by player and by game mode; the side panels show the **most played champions** and **role split** (with winrates) of that selection.
 
 ### Player page
 
@@ -57,8 +73,11 @@ LP chart of everyone in one graph, a radar chart (KDA, CS/min, damage/min, visio
 - Scoreboard of all 10 players with an own **0 to 100 score**, an **MVP** badge for the best player of the winning team and an **ACE** for the best of the losing team
 - Click a player to open their **build**: item purchases by minute, skill order and runes
 - **Compare lane**: put each role against the same role of the other team in a radar chart and a metric table
+- **Metrics**: a pop-up line chart of **gold, damage, exp and CS** of all ten players after every minute; click a champion icon to show or hide a line
 
 <img src="docs/screenshots/lane-compare.png" alt="Lane compare pop-up with radar chart" width="640">
+
+<img src="docs/screenshots/metrics.png" alt="Metrics pop-up with a gold chart of all players" width="640">
 
 > The score is Achylstic's own formula (KDA, kill participation, damage, vision, gold and CS against the other nine players), not an official Riot rating.
 
@@ -70,9 +89,11 @@ A **Login Admin** button leads to a small admin area where the admin can add a f
 
 Optional. A webhook posts a message when a match of the group ends, when someone is promoted or demoted, and on win streaks (3, 5, 7, 10, 15 and 20 games).
 
+The match message has one block per tracked player: champion, lane and the champion of the lane opponent, K/D/A, KDA, CS/min, kill participation, damage, and the 0 to 100 score with an MVP or ACE badge. The title shows the result and game mode, the footer the duration and patch.
+
 ### Made for phones too
 
-Dark theme and a responsive layout that works on a small screen.
+Dark theme and a responsive layout that works on a small screen. After an update, run `php artisan migrate` to add the new columns.
 
 <p align="center">
   <img src="docs/screenshots/mobile.png" alt="Leaderboard and match page on a phone" width="560">
@@ -84,7 +105,7 @@ Dark theme and a responsive layout that works on a small screen.
 flowchart LR
     Riot[(Riot API)] --> Sync[Scheduled sync commands]
     Sync --> DB[(MySQL)]
-    DB --> Pages[Leaderboard, player, compare and match pages]
+    DB --> Pages[Landing, leaderboard, matches, player, compare and match pages]
     Sync -.-> Discord[Discord webhook]
     DDragon[Data Dragon CDN] -.-> Pages
 ```
@@ -184,7 +205,7 @@ Which game modes are fetched is set in `config/services.php` (`riot.tracked_queu
 | `players:add {gameName} {tagLine} {--name=} {--platform=}` | Adds a player by Riot ID | |
 | `riot:sync-ranks` | Stores a rank snapshot for every active player when something changed | every 15 min |
 | `riot:sync-matches {--count=20}` | Fetches new matches, and details only for matches not stored yet | every 30 min |
-| `riot:sync-timelines {--limit=30}` | Fetches item purchases and skill order for stored matches | at :15 and :45 |
+| `riot:sync-timelines {--limit=30}` | Fetches item purchases, skill order and the per-minute gold, damage, exp and CS for stored matches (use `--limit=200` to catch up after an update) | at :15 and :45 |
 | `discord:test` | Sends a test message to the configured webhook | |
 | `admin:set-password {username}` | Creates an admin or changes their password | |
 
@@ -210,7 +231,7 @@ php artisan test
 vendor/bin/pint --test      # code style
 ```
 
-The suite has 360+ tests and runs on in-memory SQLite (the `pdo_sqlite` PHP extension must be enabled). The Riot API is always faked, so tests never use your real key.
+The suite has 380+ tests and runs on in-memory SQLite (the `pdo_sqlite` PHP extension must be enabled). The Riot API is always faked, so tests never use your real key.
 
 ## Project layout
 
@@ -220,7 +241,8 @@ app/
 ├── Http/Controllers/        thin controllers (+ Admin/ for the admin area)
 ├── Services/
 │   ├── Riot/                RiotClient, account, league, match and Data Dragon services
-│   ├── Stats/               leaderboard, KDA and per-minute stats, duo / head-to-head, match score
+│   ├── Stats/               leaderboard, KDA and per-minute stats, duo / head-to-head, match score,
+│   │                        weekly highlights, role coverage, match metrics
 │   ├── Players/             PlayerRegistrar (shared by the command and the admin page)
 │   └── Discord/             webhook client and message builders
 ├── Events/ + Listeners/     match recorded, rank changed

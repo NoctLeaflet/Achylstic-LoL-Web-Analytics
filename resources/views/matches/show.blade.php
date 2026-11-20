@@ -40,10 +40,12 @@
         One Alpine scope for the whole page:
           open     = the participant whose build panel is shown
           matchup  = the lane shown in the radar pop-up (null = closed); ?vs=TOP in the URL opens it right away
+          metricsOpen = whether the Metrics (gold/damage/exp/cs per minute) pop-up is shown
     --}}
     <div x-data="{
             open: null,
             matchup: null,
+            metricsOpen: false,
             returnFocus: null,
             toggle(id) { this.open = this.open === id ? null : id },
             openMatchup(position, event) {
@@ -58,14 +60,23 @@
             init() {
                 const lane = new URLSearchParams(window.location.search).get('vs');
                 if (lane && @js($matchupPositions).includes(lane)) { this.matchup = lane; }
+                if (@js($metrics !== null) && new URLSearchParams(window.location.search).has('metrics')) { this.metricsOpen = true; }
             },
          }"
-         x-effect="document.body.classList.toggle('overflow-hidden', matchup !== null)">
+         x-effect="document.body.classList.toggle('overflow-hidden', matchup !== null || metricsOpen)">
         <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p class="max-w-3xl text-xs text-slate-500">
                 Klik seorang pemain untuk melihat item, urutan skill, dan rune-nya. Skor 0-100 adalah penilaian kami dari KDA, partisipasi kill, damage, vision, gold, dan CS dibanding 9 pemain lain di match ini (bukan skor resmi Riot).
             </p>
 
+            <div class="flex flex-wrap gap-2">
+            @if ($metrics !== null)
+                <button type="button" @click="metricsOpen = true"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-sm font-medium text-indigo-300 outline-none transition hover:bg-indigo-500/20 focus-visible:ring-2 focus-visible:ring-indigo-400">
+                    <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17V3m0 14h14M6 13l3-4 3 2 4-6" /></svg>
+                    Metrics
+                </button>
+            @endif
             @if ($matchups !== [])
                 <button type="button" @click="openMatchup('{{ $matchups[0]['position'] }}', $event)"
                         class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 text-sm font-medium text-sky-300 outline-none transition hover:bg-sky-500/20 focus-visible:ring-2 focus-visible:ring-sky-400">
@@ -73,6 +84,7 @@
                     Compare lane
                 </button>
             @endif
+            </div>
         </div>
 
         @foreach ($teams as $team)
@@ -209,6 +221,10 @@
 
         @if ($matchups !== [])
             <x-matchup-modal :matchups="$matchups" />
+        @endif
+
+        @if ($metrics !== null)
+            <x-metrics-modal :metrics="$metrics" />
         @endif
     </div>
 @endsection

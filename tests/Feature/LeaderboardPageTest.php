@@ -25,7 +25,7 @@ class LeaderboardPageTest extends TestCase
 
     public function test_it_explains_how_to_add_players_when_there_are_none(): void
     {
-        $this->get('/')
+        $this->get('/leaderboard')
             ->assertOk()
             ->assertSee('Belum ada pemain')
             ->assertSee('php artisan players:add', false);
@@ -38,7 +38,7 @@ class LeaderboardPageTest extends TestCase
         $this->addSnapshot($gold, RankedQueue::Solo, 'GOLD', 'II', 54, wins: 12, losses: 8);
         $this->addSnapshot($emerald, RankedQueue::Solo, 'EMERALD', 'IV', 7, wins: 30, losses: 20);
 
-        $response = $this->get('/')->assertOk();
+        $response = $this->get('/leaderboard')->assertOk();
 
         $response->assertSeeInOrder(['Emerald Emmy', 'Goldie']);
         $response->assertSeeInOrder(['Emerald IV', '7 LP']);
@@ -54,7 +54,7 @@ class LeaderboardPageTest extends TestCase
         $this->makePlayer('Newbie');
         $this->addSnapshot($ranked, RankedQueue::Solo, 'SILVER', 'III', 10);
 
-        $this->get('/')
+        $this->get('/leaderboard')
             ->assertOk()
             ->assertSeeInOrder(['Ranked', 'Newbie', 'Unranked']);
     }
@@ -65,13 +65,13 @@ class LeaderboardPageTest extends TestCase
         $this->addSnapshot($player, RankedQueue::Solo, 'GOLD', 'IV', 10);
         $this->addSnapshot($player, RankedQueue::Flex, 'PLATINUM', 'I', 99);
 
-        $solo = $this->get('/')->assertOk();
+        $solo = $this->get('/leaderboard')->assertOk();
         $solo->assertSee('Peringkat Ranked Solo/Duo');
         $solo->assertSee('Gold IV');
         $solo->assertDontSee('Platinum I');
         $solo->assertSee('?queue=flex', false);
 
-        $flex = $this->get('/?queue=flex')->assertOk();
+        $flex = $this->get('/leaderboard?queue=flex')->assertOk();
         $flex->assertSee('Peringkat Ranked Flex');
         $flex->assertSee('Platinum I');
         $flex->assertDontSee('Gold IV');
@@ -79,7 +79,7 @@ class LeaderboardPageTest extends TestCase
 
     public function test_an_unknown_queue_falls_back_to_solo(): void
     {
-        $this->get('/?queue=aram')
+        $this->get('/leaderboard?queue=aram')
             ->assertOk()
             ->assertSee('Peringkat Ranked Solo/Duo');
     }
@@ -89,14 +89,14 @@ class LeaderboardPageTest extends TestCase
         $this->makePlayer('Visible');
         $this->makePlayer('Hidden', ['is_active' => false]);
 
-        $this->get('/')->assertOk()->assertSee('Visible')->assertDontSee('Hidden');
+        $this->get('/leaderboard')->assertOk()->assertSee('Visible')->assertDontSee('Hidden');
     }
 
     public function test_player_names_are_escaped(): void
     {
         $this->makePlayer('Evil', ['display_name' => '<script>alert(1)</script>']);
 
-        $this->get('/')
+        $this->get('/leaderboard')
             ->assertOk()
             ->assertDontSee('<script>alert(1)</script>', false)
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false);
@@ -106,7 +106,7 @@ class LeaderboardPageTest extends TestCase
     {
         $player = $this->makePlayer('Alpha');
 
-        $this->get('/?queue=flex')
+        $this->get('/leaderboard?queue=flex')
             ->assertOk()
             ->assertSee("/players/{$player->id}?queue=flex", false)
             ->assertSee('https://ddragon.leagueoflegends.com/cdn/16.1.1/img/profileicon/4567.png', false);
@@ -117,7 +117,7 @@ class LeaderboardPageTest extends TestCase
         $player = $this->makePlayer('Alpha');
         $this->addSnapshot($player, RankedQueue::Solo, 'GOLD', 'IV', 10);
 
-        $this->get('/')->assertOk();
+        $this->get('/leaderboard')->assertOk();
 
         Http::assertNothingSent();
     }

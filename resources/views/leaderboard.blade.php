@@ -129,5 +129,7 @@
                 </tbody>
             </table>
         </div>
+
+        @include('partials.weekly')
     @endif
 @endsection

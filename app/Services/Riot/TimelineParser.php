@@ -4,7 +4,8 @@ namespace App\Services\Riot;
 
 /**
  * Boils a match-v5 timeline down to what the build view needs per player:
- * the items they bought (in order) and the order they levelled their skills.
+ * the items they bought (in order), the order they levelled their skills, and
+ * their gold, xp, cs and damage to champions after every minute.
  *
  * Participants are matched through info.participants (participantId <-> puuid).
  * The order of metadata.participants is NOT the participantId order, so it must
@@ -14,7 +15,7 @@ final class TimelineParser
 {
     /**
      * @param  array<string, mixed>  $timeline  raw timeline response
-     * @return array<string, array{item_purchases: list<array{0: int, 1: int}>, skill_order: list<int>}> keyed by puuid
+     * @return array<string, array{item_purchases: list<array{0: int, 1: int}>, skill_order: list<int>, metrics: array<string, list<int>>|null}> keyed by puuid; metrics = per-minute running totals {gold, damage, xp, cs} or null
      */
     public function parse(array $timeline): array
     {
@@ -28,8 +29,23 @@ final class TimelineParser
 
         $purchases = [];
         $skills = [];
+        $metrics = [];
 
         foreach ($timeline['info']['frames'] ?? [] as $frame) {
+            // One entry per minute (frame): running totals of gold, xp, cs and damage to champions.
+            foreach ($frame['participantFrames'] ?? [] as $key => $stats) {
+                $id = (int) $key;
+
+                if (! isset($puuidByParticipant[$id])) {
+                    continue;
+                }
+
+                $metrics[$id]['gold'][] = (int) ($stats['totalGold'] ?? 0);
+                $metrics[$id]['damage'][] = (int) ($stats['damageStats']['totalDamageDoneToChampions'] ?? 0);
+                $metrics[$id]['xp'][] = (int) ($stats['xp'] ?? 0);
+                $metrics[$id]['cs'][] = (int) (($stats['minionsKilled'] ?? 0) + ($stats['jungleMinionsKilled'] ?? 0));
+            }
+
             foreach ($frame['events'] ?? [] as $event) {
                 // Shop events with participantId 0 are not a player's.
                 $participantId = (int) ($event['participantId'] ?? 0);
@@ -65,6 +81,7 @@ final class TimelineParser
             $result[$puuid] = [
                 'item_purchases' => array_values(array_filter($purchases[$participantId] ?? [], fn (array $purchase) => $purchase[1] > 0)),
                 'skill_order' => $skills[$participantId] ?? [],
+                'metrics' => $metrics[$participantId] ?? null,
             ];
         }
 

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <title>@yield('title', config('app.name'))</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" href="{{ asset('icon-192.png') }}" sizes="192x192">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
     @fonts
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -12,7 +15,8 @@
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-10 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-            <a href="{{ route('leaderboard') }}" class="text-lg font-semibold tracking-tight text-white">
+            <a href="{{ route('home') }}" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white">
+                <img src="{{ asset('icon-192.png') }}" alt="" width="32" height="32" class="size-8 rounded-lg">
                 {{ config('app.name') }}
             </a>
 
@@ -23,6 +27,12 @@
                        'bg-slate-800 text-white' => request()->routeIs('leaderboard'),
                        'text-slate-400 hover:text-slate-200' => ! request()->routeIs('leaderboard'),
                    ])>Leaderboard</a>
+                <a href="{{ route('matches.index') }}"
+                   @class([
+                       'rounded-md px-2 py-1.5 font-medium transition sm:px-3',
+                       'bg-slate-800 text-white' => request()->routeIs('matches.index'),
+                       'text-slate-400 hover:text-slate-200' => ! request()->routeIs('matches.index'),
+                   ])>Matches</a>
                 <a href="{{ route('compare') }}"
                    @class([
                        'rounded-md px-2 py-1.5 font-medium transition sm:px-3',

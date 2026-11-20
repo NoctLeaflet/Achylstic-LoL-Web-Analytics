@@ -117,7 +117,7 @@ class TimelineParserTest extends TestCase
     {
         $builds = $this->parser()->parse(RiotFixtures::timeline('SG2_1', ['alpha']));
 
-        $this->assertSame(['item_purchases' => [], 'skill_order' => []], $builds['alpha']);
+        $this->assertSame(['item_purchases' => [], 'skill_order' => [], 'metrics' => null], $builds['alpha']);
     }
 
     public function test_malformed_timelines_give_nothing(): void

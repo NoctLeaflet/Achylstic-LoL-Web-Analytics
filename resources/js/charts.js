@@ -188,6 +188,77 @@ export function registerCharts(Alpine) {
         },
     }));
 
+    // Per-minute metrics of all players of one match.
+    // data = { minutes: [0, 1, ...], metrics: { gold: 'Gold', ... }, players: [{ id, name, champion_name, color, series: { gold: [...], ... } }] }
+    Alpine.data('metricsChart', (data) => {
+        // Kept out of Alpine's reactive data: Chart.js objects must not be proxied.
+        let chart = null;
+
+        return {
+
+        metric: Object.keys(data.metrics)[0],
+        metrics: data.metrics,
+        hidden: [],
+
+        init() {
+            const compact = (value) => (value >= 1000 ? `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k` : value);
+
+            chart = new Chart(this.$refs.canvas, {
+                type: 'line',
+                data: {
+                    labels: data.minutes.map((minute) => `${minute} min`),
+                    datasets: data.players.map((player) => ({
+                        label: `${player.name} (${player.champion_name})`,
+                        playerId: player.id,
+                        data: player.series[this.metric],
+                        borderColor: player.color,
+                        backgroundColor: player.color,
+                        borderWidth: 2,
+                        tension: 0.25,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                    })),
+                },
+                options: {
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 12, maxRotation: 0 } },
+                        y: { beginAtZero: true, ticks: { callback: compact } },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (item) => `${item.dataset.label}: ${Number(item.raw).toLocaleString('en-US')}`,
+                            },
+                        },
+                    },
+                },
+            });
+        },
+
+        select(key) {
+            this.metric = key;
+            chart.data.datasets.forEach((dataset, index) => {
+                dataset.data = data.players[index].series[key];
+            });
+            chart.update();
+        },
+
+        toggle(playerId) {
+            this.hidden = this.hidden.includes(playerId) ? this.hidden.filter((id) => id !== playerId) : [...this.hidden, playerId];
+            chart.data.datasets.forEach((dataset, index) => {
+                chart.setDatasetVisibility(index, ! this.hidden.includes(dataset.playerId));
+            });
+            chart.update();
+        },
+
+        destroy() {
+            chart?.destroy();
+        },
+        };
+    });
+
     // One bar chart for one metric. bar = { label, labels, values, colors }
     Alpine.data('barChart', (bar) => ({
         chart: null,

@@ -40,7 +40,7 @@ class TeamStatsPagesTest extends TestCase
         $this->addSnapshot($down, RankedQueue::Solo, 'GOLD', 'II', 50, capturedAt: now()->subDays(6));
         $this->addSnapshot($down, RankedQueue::Solo, 'GOLD', 'II', 20, capturedAt: now()->subHour());
 
-        $response = $this->get('/')->assertOk();
+        $response = $this->get('/leaderboard')->assertOk();
 
         $response->assertSee('Climber of the week');
         $response->assertSee('Gold IV · 10 LP');
@@ -59,7 +59,7 @@ class TeamStatsPagesTest extends TestCase
         $this->addSnapshot($player, RankedQueue::Solo, 'GOLD', 'II', 50, capturedAt: now()->subDays(6));
         $this->addSnapshot($player, RankedQueue::Solo, 'GOLD', 'II', 20, capturedAt: now()->subHour());
 
-        $this->get('/')->assertOk()->assertDontSee('Climber of the week');
+        $this->get('/leaderboard')->assertOk()->assertDontSee('Climber of the week');
     }
 
     public function test_the_climber_follows_the_selected_queue(): void
@@ -68,15 +68,15 @@ class TeamStatsPagesTest extends TestCase
         $this->addSnapshot($player, RankedQueue::Flex, 'SILVER', 'IV', 0, capturedAt: now()->subDays(5));
         $this->addSnapshot($player, RankedQueue::Flex, 'SILVER', 'IV', 40, capturedAt: now()->subHour());
 
-        $this->get('/')->assertOk()->assertDontSee('Climber of the week');
-        $this->get('/?queue=flex')->assertOk()->assertSee('Climber of the week')->assertSee('+40');
+        $this->get('/leaderboard')->assertOk()->assertDontSee('Climber of the week');
+        $this->get('/leaderboard?queue=flex')->assertOk()->assertSee('Climber of the week')->assertSee('+40');
     }
 
     public function test_the_leaderboard_still_works_without_any_ranked_player(): void
     {
         $this->makePlayer('Alpha');
 
-        $this->get('/')->assertOk()->assertDontSee('Climber of the week');
+        $this->get('/leaderboard')->assertOk()->assertDontSee('Climber of the week');
     }
 
     // ---- Duo / head-to-head on the compare page ---------------------------
@@ -175,7 +175,7 @@ class TeamStatsPagesTest extends TestCase
         $b = $this->makePlayer('Beta');
         $this->addTeamGame([$a, $b], [], blueWins: true);
 
-        $this->get('/')->assertOk();
+        $this->get('/leaderboard')->assertOk();
         $this->get("/players/{$a->id}")->assertOk();
         $this->get("/compare?players={$a->id},{$b->id}")->assertOk();
 

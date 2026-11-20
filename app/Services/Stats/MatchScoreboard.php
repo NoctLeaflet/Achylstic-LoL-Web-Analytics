@@ -26,6 +26,7 @@ final class MatchScoreboard
         private readonly MatchScore $scores,
         private readonly ParticipantBuild $builds,
         private readonly LaneMatchups $lanes,
+        private readonly MatchMetrics $metrics,
     ) {}
 
     /**
@@ -69,6 +70,8 @@ final class MatchScoreboard
             'mvp' => $mvp,
             // Lane against lane for the radar pop-up (empty for ARAM and remakes).
             'matchups' => $this->lanes->build($teams, $match->game_duration),
+            // Gold/damage/xp/cs per minute for the Metrics pop-up (null without a fetched timeline).
+            'metrics' => $match->isRemake() ? null : $this->metrics->build($teams, $participants),
             'match' => [
                 'match_id' => $match->match_id,
                 'queue' => MatchQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}",

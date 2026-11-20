@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'perks',
     'item_purchases',
     'skill_order',
+    'metrics',
 ])]
 #[WithoutTimestamps]
 class MatchParticipant extends Model
@@ -61,6 +62,7 @@ class MatchParticipant extends Model
             'perks' => 'array',
             'item_purchases' => 'array',
             'skill_order' => 'array',
+            'metrics' => 'array',
         ];
     }
 
