@@ -73,6 +73,10 @@ Every stored game of the group, newest first and grouped by day, with each playe
 
 What the group plays: games, winrate and KDA per champion across all friends, who plays each one most, and highlights for the most played champion, best winrate and best KDA (at least 5 games). Sort by games, winrate or KDA and filter by game mode.
 
+### Member builds
+
+What the friends actually play on a champion, from their own games (never from strangers in the same matches): the most used **rune pages** (keystone, picks, secondary tree and shards) with games and winrate, the most bought **final items** with the winrate of the games that had them, the usual **skill order**, and who plays the champion. Pick a champion and filter by member and game mode; a member who never played it gets a friendly "never played" page with links to widen the selection. The sample is small by nature, so the page says so and warns when a champion has fewer than 5 games. This is not a global tier list: Riot offers no global statistics, and collecting them would need tens of thousands of matches per patch.
+
 ### Best duos
 
 <img src="docs/screenshots/duos.png" alt="Duo ranking with the most played duo and biggest rivalry" width="860">

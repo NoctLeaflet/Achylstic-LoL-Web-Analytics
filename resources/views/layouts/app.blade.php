@@ -63,6 +63,12 @@
                        'bg-slate-800 text-white' => request()->routeIs('champions'),
                        'text-slate-400 hover:text-slate-200' => ! request()->routeIs('champions'),
                    ])>Champion</a>
+                <a href="{{ route('builds') }}"
+                   @class([
+                       'rounded-md px-2 py-1.5 font-medium transition sm:px-3',
+                       'bg-slate-800 text-white' => request()->routeIs('builds', 'builds.show'),
+                       'text-slate-400 hover:text-slate-200' => ! request()->routeIs('builds', 'builds.show'),
+                   ])>Build</a>
                 <a href="{{ route('compare') }}"
                    @class([
                        'rounded-md px-2 py-1.5 font-medium transition sm:px-3',
