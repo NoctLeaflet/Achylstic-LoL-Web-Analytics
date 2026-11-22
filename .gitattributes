@@ -12,3 +12,4 @@ CHANGELOG.md export-ignore
 
 # Shell scripts run on Linux servers: always LF.
 *.sh text eol=lf
+*.bat text eol=crlf

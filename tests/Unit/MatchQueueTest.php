@@ -68,7 +68,7 @@ class MatchQueueTest extends TestCase
     public function test_the_tracked_modes_follow_the_config_in_display_order(): void
     {
         $this->assertSame(
-            [MatchQueue::Solo, MatchQueue::Flex, MatchQueue::Normal, MatchQueue::Aram, MatchQueue::AramMayhem],
+            [MatchQueue::Solo, MatchQueue::Flex, MatchQueue::Normal, MatchQueue::Aram],   // ARAM Mayhem is not tracked by default
             MatchQueue::tracked(),
         );
 

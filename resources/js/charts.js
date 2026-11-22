@@ -188,6 +188,64 @@ export function registerCharts(Alpine) {
         },
     }));
 
+    // Gold difference between a player and their lane opponent after every minute.
+    // data = { minutes: [0, 1, ...], diff: [0, 120, -40, ...], name, opponent }. Above zero = the player leads.
+    Alpine.data('goldDiffChart', (data) => {
+        let chart = null;
+        const compact = (value) => (Math.abs(value) >= 1000 ? `${(value / 1000).toFixed(1)}k` : value);
+
+        return {
+            init() {
+                chart = new Chart(this.$refs.canvas, {
+                    type: 'line',
+                    data: {
+                        labels: data.minutes.map((minute) => `${minute}m`),
+                        datasets: [
+                            {
+                                label: 'Gold diff',
+                                data: data.diff,
+                                borderWidth: 2,
+                                tension: 0.25,
+                                pointRadius: 0,
+                                pointHoverRadius: 4,
+                                fill: { target: 'origin', above: 'rgba(56, 189, 248, 0.25)', below: 'rgba(251, 113, 133, 0.25)' },
+                                borderColor: '#a78bfa',
+                                segment: {
+                                    borderColor: (ctx) => ((ctx.p0.parsed.y + ctx.p1.parsed.y) / 2 >= 0 ? '#38bdf8' : '#fb7185'),
+                                },
+                            },
+                        ],
+                    },
+                    options: {
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0 } },
+                            y: { ticks: { callback: compact } },
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: (items) => items[0].label,
+                                    label: (item) => {
+                                        const value = Number(item.raw);
+                                        const leader = value >= 0 ? data.name : data.opponent;
+
+                                        return `${leader} +${Math.abs(value).toLocaleString('en-US')} gold`;
+                                    },
+                                },
+                            },
+                        },
+                    },
+                });
+            },
+
+            destroy() {
+                chart?.destroy();
+            },
+        };
+    });
+
     // Per-minute metrics of all players of one match.
     // data = { minutes: [0, 1, ...], metrics: { gold: 'Gold', ... }, players: [{ id, name, champion_name, color, series: { gold: [...], ... } }] }
     Alpine.data('metricsChart', (data) => {

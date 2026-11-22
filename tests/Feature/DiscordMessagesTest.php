@@ -31,7 +31,7 @@ class DiscordMessagesTest extends TestCase
 
         $embed = $this->messages()->match($match);
 
-        $this->assertSame('✅ Menang · Solo/Duo', $embed['title']);
+        $this->assertSame('✅ Win · Solo/Duo', $embed['title']);
         $this->assertSame(
             "**Ayam** · Ahri (Mid)\n**8/2/10** · 9.00 KDA · 10.0 CS/min · 300 CS\n100% kill participation · 20.0k damage\n🏅 **MVP** · skor 75",
             $embed['description'],
@@ -49,7 +49,7 @@ class DiscordMessagesTest extends TestCase
 
         $embed = $this->messages()->match($match);
 
-        $this->assertSame('❌ Kalah · Flex', $embed['title']);
+        $this->assertSame('❌ Lose · Flex', $embed['title']);
         $this->assertSame(0xEF4444, $embed['color']);
     }
 
@@ -61,7 +61,7 @@ class DiscordMessagesTest extends TestCase
 
         $embed = $this->messages()->match($match);
 
-        $this->assertSame('✅ Menang · Solo/Duo', $embed['title']);
+        $this->assertSame('✅ Win · Solo/Duo', $embed['title']);
         $this->assertStringContainsString('**Alpha**', $embed['description']);
         $this->assertStringContainsString('**Beta**', $embed['description']);
         $this->assertStringNotContainsString('✅ **', $embed['description']);   // one shared result, no per-line marker

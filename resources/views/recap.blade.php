@@ -42,7 +42,7 @@
                     </div>
                     <div class="rounded-xl bg-slate-950/50 p-3">
                         <p @class(['text-3xl font-extrabold tabular-nums', 'text-emerald-400' => $recap['winrate'] >= 50, 'text-rose-400' => $recap['winrate'] < 50])>{{ $recap['winrate'] }}%</p>
-                        <p class="text-xs text-slate-400">{{ $recap['wins'] }}M {{ $recap['losses'] }}K</p>
+                        <p class="text-xs text-slate-400">{{ $recap['wins'] }}W {{ $recap['losses'] }}L</p>
                     </div>
                     <div class="rounded-xl bg-slate-950/50 p-3">
                         <p class="text-3xl font-extrabold tabular-nums text-white">{{ \App\Support\Format::number($recap['hours']) }}</p>
@@ -55,7 +55,7 @@
                     <div class="flex justify-between"><dt class="text-slate-400">Kill + assist</dt><dd class="font-semibold tabular-nums text-white">{{ number_format($recap['kills'] + $recap['assists'], 0, ',', '.') }}</dd></div>
                     <div class="flex justify-between"><dt class="text-slate-400">MVP</dt><dd class="font-semibold tabular-nums text-amber-300">{{ $recap['mvp'] }}</dd></div>
                     <div class="flex justify-between"><dt class="text-slate-400">ACE</dt><dd class="font-semibold tabular-nums text-amber-300">{{ $recap['ace'] }}</dd></div>
-                    <div class="flex justify-between"><dt class="text-slate-400">Menang beruntun</dt><dd class="font-semibold tabular-nums text-white">{{ $recap['longest_streak'] }}</dd></div>
+                    <div class="flex justify-between"><dt class="text-slate-400">Win streak</dt><dd class="font-semibold tabular-nums text-white">{{ $recap['longest_streak'] }}</dd></div>
                     <div class="flex justify-between"><dt class="text-slate-400">Lane utama</dt><dd class="font-semibold text-white">{{ $recap['role']['label'] ?? '–' }}</dd></div>
                 </dl>
 

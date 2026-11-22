@@ -10,6 +10,7 @@ use App\Http\Controllers\CompareController;
 use App\Http\Controllers\DuoController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\LiveController;
 use App\Http\Controllers\MatchController;
 use App\Http\Controllers\MatchListController;
 use App\Http\Controllers\PlayerController;
@@ -24,6 +25,7 @@ Route::get('/players/{player}/recap', RecapController::class)->name('players.rec
 Route::get('/compare', CompareController::class)->name('compare');
 Route::get('/matches', MatchListController::class)->name('matches.index');
 Route::get('/duos', DuoController::class)->name('duos');
+Route::get('/live', LiveController::class)->name('live');
 Route::get('/champions', ChampionController::class)->name('champions');
 Route::get('/builds', [BuildController::class, 'index'])->name('builds');
 Route::get('/builds/{championId}', [BuildController::class, 'show'])->whereNumber('championId')->name('builds.show');

@@ -201,7 +201,7 @@ class MatchRadarPopupTest extends TestCase
         $response = $this->get('/matches/SG2_ARAM?vs=TOP')->assertOk();
 
         $this->assertSame([], $response->viewData('matchups'));
-        $response->assertDontSee('role="dialog"', false);
+        $response->assertDontSee('id="matchup-title"', false)->assertDontSee('id="lanes-title"', false);
         $response->assertDontSee('Compare lane');
         $this->assertSame(0, substr_count($response->getContent(), 'title="Compare dengan lawan lane"'));
     }
@@ -215,7 +215,7 @@ class MatchRadarPopupTest extends TestCase
         $response = $this->get("/matches/{$match->match_id}")->assertOk();
 
         $this->assertSame([], $response->viewData('matchups'));
-        $response->assertDontSee('role="dialog"', false);
+        $response->assertDontSee('id="matchup-title"', false)->assertDontSee('id="lanes-title"', false);
     }
 
     public function test_a_lane_that_is_missing_on_one_team_has_no_tab(): void

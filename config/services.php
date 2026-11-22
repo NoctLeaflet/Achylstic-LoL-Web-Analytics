@@ -70,9 +70,13 @@ return [
             'per_two_minutes' => 100,
         ],
         // Game modes whose matches are fetched, stored and shown (match-v5 queue ids):
-        // 420 Solo/Duo, 440 Flex, 400 Normal Draft, 450 ARAM, 2400 ARAM Mayhem.
+        // 420 Solo/Duo, 440 Flex, 400 Normal Draft, 450 ARAM.
         // Add 480 for Swiftplay. Every mode costs one extra request per player per sync.
-        'tracked_queues' => [420, 440, 400, 450, 2400],
+        //
+        // 2400 (ARAM Mayhem) is NOT tracked: when checked on 2026-11-22, Riot's match-v5 returned
+        // no ARAM Mayhem game for any of the 9 players (queue=2400 gave 0 ids, and none of their 280
+        // newest games had that queue). Add 2400 back here if Riot starts returning them.
+        'tracked_queues' => [420, 440, 400, 450],
     ],
 
     /*

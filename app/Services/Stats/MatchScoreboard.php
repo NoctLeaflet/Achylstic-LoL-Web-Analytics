@@ -27,6 +27,8 @@ final class MatchScoreboard
         private readonly ParticipantBuild $builds,
         private readonly LaneMatchups $lanes,
         private readonly MatchMetrics $metrics,
+        private readonly LaneOverview $laneOverview,
+        private readonly MatchPerformance $performance,
     ) {}
 
     /**
@@ -72,6 +74,9 @@ final class MatchScoreboard
             'matchups' => $this->lanes->build($teams, $match->game_duration),
             // Gold/damage/xp/cs per minute for the Metrics pop-up (null without a fetched timeline).
             'metrics' => $match->isRemake() ? null : $this->metrics->build($teams, $participants),
+            // The "Lanes" and "Performance" pop-ups.
+            'lanes' => $this->laneOverview->build($this->lanes->build($teams, $match->game_duration)),
+            'performance' => $this->performance->build($teams, $participants, $match),
             'match' => [
                 'match_id' => $match->match_id,
                 'queue' => MatchQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}",

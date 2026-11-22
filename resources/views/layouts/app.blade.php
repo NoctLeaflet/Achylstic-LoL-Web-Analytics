@@ -45,6 +45,14 @@
                        'bg-slate-800 text-white' => request()->routeIs('leaderboard'),
                        'text-slate-400 hover:text-slate-200' => ! request()->routeIs('leaderboard'),
                    ])>Leaderboard</a>
+                <a href="{{ route('live') }}"
+                   @class([
+                       'inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 font-medium transition sm:px-3',
+                       'bg-slate-800 text-white' => request()->routeIs('live'),
+                       'text-slate-400 hover:text-slate-200' => ! request()->routeIs('live'),
+                   ])>
+                    <span class="size-1.5 rounded-full bg-rose-400" aria-hidden="true"></span>Live
+                </a>
                 <a href="{{ route('matches.index') }}"
                    @class([
                        'rounded-md px-2 py-1.5 font-medium transition sm:px-3',

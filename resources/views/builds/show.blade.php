@@ -18,7 +18,7 @@
                 @if ($build)
                     <p class="text-sm tabular-nums text-slate-400">
                         {{ $build['games'] }} game ·
-                        <span @class(['font-semibold', 'text-emerald-400' => $build['winrate'] >= 50, 'text-rose-400' => $build['winrate'] < 50])>{{ $build['winrate'] }}% menang</span>
+                        <span @class(['font-semibold', 'text-emerald-400' => $build['winrate'] >= 50, 'text-rose-400' => $build['winrate'] < 50])>{{ $build['winrate'] }}% win</span>
                         · {{ \App\Support\Format::number($build['kda'], 2) }} KDA
                     </p>
                 @endif
@@ -79,7 +79,7 @@
                     <article class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
                         <p class="flex items-baseline justify-between text-sm tabular-nums">
                             <span class="font-semibold text-white">{{ $page['games'] }} game</span>
-                            <span @class(['font-semibold', 'text-emerald-400' => $page['winrate'] >= 50, 'text-rose-400' => $page['winrate'] < 50])>{{ $page['winrate'] }}% menang</span>
+                            <span @class(['font-semibold', 'text-emerald-400' => $page['winrate'] >= 50, 'text-rose-400' => $page['winrate'] < 50])>{{ $page['winrate'] }}% win</span>
                         </p>
 
                         @foreach (['primary' => $page['primary'], 'secondary' => $page['secondary']] as $tree)

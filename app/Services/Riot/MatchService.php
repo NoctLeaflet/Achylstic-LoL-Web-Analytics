@@ -10,6 +10,7 @@ use App\Services\Riot\Exceptions\RiotApiException;
 use App\Services\Riot\Exceptions\RiotAuthException;
 use Carbon\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Log;
  */
 class MatchService
 {
+    /** How many of the newest ids the quick check looks at (a few games between two runs at most). */
+    public const QUICK_CHECK_COUNT = 5;
+
     public function __construct(
         private readonly RiotClient $riot,
         private readonly TimelineParser $timelines,
@@ -99,8 +103,23 @@ class MatchService
      *
      * @return int number of matches stored
      */
-    public function syncPlayer(Player $player, int $count = 20): int
+    public function syncPlayer(Player $player, int $count = 20, bool $quick = false): int
     {
+        $recent = [];
+
+        if ($quick) {
+            // One cheap request: the newest ids of every mode. When all of them are stored, or were
+            // already seen to be games of a mode we do not track, there is nothing new and the
+            // per-mode requests (one per tracked mode) are skipped.
+            $recent = $this->fetchMatchIds($player->puuid, self::QUICK_CHECK_COUNT);
+            $stored = GameMatch::whereIn('match_id', $recent)->pluck('match_id')->all();
+            $unseen = array_filter(array_diff($recent, $stored), fn (string $id) => ! Cache::has($this->ignoredKey($id)));
+
+            if ($unseen === []) {
+                return 0;
+            }
+        }
+
         $stored = 0;
         $playerIdsByPuuid = Player::pluck('id', 'puuid')->all();
 
@@ -128,7 +147,18 @@ class MatchService
             }
         }
 
+        // What is still not stored after a full pass belongs to a mode we do not track (Swiftplay, Arena...).
+        // Remember it, so the quick check does not run the full pass again for the same games.
+        foreach (array_diff($recent, GameMatch::whereIn('match_id', $recent)->pluck('match_id')->all()) as $id) {
+            Cache::put($this->ignoredKey($id), true, now()->addDay());
+        }
+
         return $stored;
+    }
+
+    private function ignoredKey(string $matchId): string
+    {
+        return "riot.untracked-match.{$matchId}";
     }
 
     /**

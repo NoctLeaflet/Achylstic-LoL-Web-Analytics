@@ -33,6 +33,18 @@
         </p>
     @endif
 
+    @unless ($scheduler['alive'])
+        <div role="alert" class="mt-5 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
+            <p class="font-semibold text-amber-200">Penjadwal (scheduler) tidak berjalan.</p>
+            <p class="mt-1 text-amber-200/80">
+                {{ $scheduler['last'] ? 'Terakhir aktif '.$scheduler['last']->diffForHumans().'.' : 'Belum pernah terdeteksi aktif.' }}
+                Tanpa itu rank dan match tidak diperbarui otomatis, dan bot Discord tidak mendapat kabar baru.
+                Jalankan <code class="rounded bg-slate-950/60 px-1">start-achylstic.bat</code> (atau
+                <code class="rounded bg-slate-950/60 px-1">php artisan schedule:work</code> di terminal), dan biarkan jendelanya terbuka.
+            </p>
+        </div>
+    @endunless
+
     @if ($keyRejection)
         <div role="alert" class="mt-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-100">
             <p class="font-semibold text-rose-200">API key Riot ditolak (HTTP {{ $keyRejection['status'] }}), sejak {{ $keyRejection['since']->diffForHumans() }}.</p>

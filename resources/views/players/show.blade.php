@@ -4,6 +4,9 @@
 @section('description', $player->name.' ('.$player->riot_id.'): '.($current ? \App\Services\Stats\RankScore::label($current->tier, $current->rank, $current->league_points).' di '.$headerQueue->label().', ' : '').'statistik, grafik LP, dan match terakhir.')
 
 @section('content')
+  {{-- One Alpine scope for the page: "panel" is the open pop-up (mastery, achievements) or null. ?panel=mastery opens it right away. --}}
+  <div x-data="{ panel: ['mastery', 'achievements'].includes(new URLSearchParams(location.search).get('panel')) ? new URLSearchParams(location.search).get('panel') : null }"
+       x-effect="document.body.classList.toggle('overflow-hidden', panel !== null)">
     <x-back-link :fallback="route('leaderboard', ['queue' => $headerQueue->slug()])" />
 
     {{-- Header --}}
@@ -19,20 +22,39 @@
                     @endif
                     <span class="text-slate-600">·</span> {{ strtoupper($player->platform) }}
                 </p>
-                <a href="{{ route('players.recap', $player) }}" class="mt-1 inline-block text-xs font-medium text-indigo-300 hover:text-indigo-200">Lihat rekap season &rarr;</a>
                 @if ($liveGame)
                     <x-live-badge :game="$liveGame" class="mt-1" />
                 @endif
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center justify-end gap-3">
+            {{-- Menu: opens the pop-ups at the end of this page --}}
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('players.recap', $player) }}"
+                   class="inline-flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-300 outline-none transition hover:bg-emerald-500/20 focus-visible:ring-2 focus-visible:ring-emerald-400">
+                    <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2" /><path d="M7 13V9M10 13V6M13 13v-2" /></svg>
+                    Rekap season
+                </a>
+                <button type="button" @click="panel = 'mastery'"
+                        class="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-300 outline-none transition hover:bg-amber-500/20 focus-visible:ring-2 focus-visible:ring-amber-400">
+                    <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l2.4 5 5.6.7-4 3.9 1 5.6L10 14.6 5 17.2l1-5.6-4-3.9 5.6-.7z" /></svg>
+                    Mastery
+                </button>
+                <button type="button" @click="panel = 'achievements'"
+                        class="inline-flex items-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-sm font-medium text-violet-300 outline-none transition hover:bg-violet-500/20 focus-visible:ring-2 focus-visible:ring-violet-400">
+                    <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8v4a4 4 0 01-8 0V3zM6 5H3v1a3 3 0 003 3M14 5h3v1a3 3 0 01-3 3M10 11v3M7 17h6" /></svg>
+                    Achievement
+                    <span class="rounded-full bg-violet-500/20 px-1.5 text-xs tabular-nums">{{ collect($achievements)->whereNotNull('earned_at')->count() }}/{{ count($achievements) }}</span>
+                </button>
+            </div>
+
             @if ($current)
                 <div class="text-right">
                     <x-rank-badge :tier="$current->tier" :rank="$current->rank" />
                     <p class="mt-1 text-sm tabular-nums text-slate-300">
                         {{ $current->league_points }} LP
-                        <span class="text-slate-500">· {{ $current->wins }}M {{ $current->losses }}K</span>
+                        <span class="text-slate-500">· {{ $current->wins }}W {{ $current->losses }}L</span>
                     </p>
                     {{-- Only Solo/Duo and Flex have a rank; other game modes show the Solo/Duo one. --}}
                     <p class="text-xs text-slate-500">{{ $headerQueue->label() }}</p>
@@ -109,7 +131,7 @@
                 <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Game</p>
                     <p class="mt-1 text-2xl font-semibold tabular-nums text-white">{{ $stats['games'] }}</p>
-                    <p class="text-xs tabular-nums text-slate-400">{{ $stats['wins'] }}M {{ $stats['losses'] }}K</p>
+                    <p class="text-xs tabular-nums text-slate-400">{{ $stats['wins'] }}W {{ $stats['losses'] }}L</p>
                 </div>
                 <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Winrate</p>
@@ -186,59 +208,10 @@
         </section>
     @endif
 
-    {{-- Champion mastery (from Riot, refreshed daily) --}}
-    @if ($masteries->isNotEmpty())
-        <section class="mt-6" aria-labelledby="mastery-heading">
-            <h2 id="mastery-heading" class="mb-3 text-lg font-semibold text-white">Champion mastery</h2>
-            <ul class="divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
-                @foreach ($masteries as $mastery)
-                    <li class="flex items-center gap-3 px-4 py-3">
-                        <x-champion-icon :name="$championNames[$mastery->champion_id] ?? ''" :id="$mastery->champion_id" />
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate font-medium text-white">{{ $championNames[$mastery->champion_id] ?? 'Champion #'.$mastery->champion_id }}</p>
-                            <p class="text-xs text-slate-500">
-                                {{ $mastery->last_played_at ? 'Terakhir dimainkan '.$mastery->last_played_at->diffForHumans() : 'Belum ada data waktu main' }}
-                            </p>
-                        </div>
-                        <div class="text-right text-sm tabular-nums">
-                            <p class="font-semibold text-amber-300">Level {{ $mastery->level }}</p>
-                            <p class="text-xs text-slate-400">{{ number_format($mastery->points, 0, ',', '.') }} poin</p>
-                        </div>
-                    </li>
-                @endforeach
-            </ul>
-        </section>
-    @endif
-
-    {{-- Achievements: earned ones first (newest first), locked ones dimmed --}}
-    <section class="mt-6" aria-labelledby="achievements-heading">
-        <h2 id="achievements-heading" class="text-lg font-semibold text-white">
-            Pencapaian
-            <span class="text-sm font-normal text-slate-500">{{ collect($achievements)->whereNotNull('earned_at')->count() }} dari {{ count($achievements) }}</span>
-        </h2>
-        <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach ($achievements as $achievement)
-                <li @class([
-                    'flex items-center gap-3 rounded-xl border p-3',
-                    'border-amber-500/30 bg-amber-500/5' => $achievement['earned_at'],
-                    'border-slate-800 bg-slate-900/30 opacity-50' => ! $achievement['earned_at'],
-                ])>
-                    <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-xl {{ $achievement['earned_at'] ? '' : 'grayscale' }}" aria-hidden="true">{{ $achievement['icon'] }}</span>
-                    <div class="min-w-0">
-                        <p class="truncate font-semibold text-white">{{ $achievement['name'] }}</p>
-                        <p class="text-xs text-slate-400">{{ $achievement['description'] }}</p>
-                        <p class="text-xs text-slate-500">
-                            {{ $achievement['earned_at'] ? 'Diraih '.$achievement['earned_at']->translatedFormat('j M Y') : 'Belum diraih' }}
-                        </p>
-                    </div>
-                </li>
-            @endforeach
-        </ul>
-    </section>
-
-    {{-- Top champions --}}
+    {{-- Top champions (left) and lanes (right) side by side; stacked on a phone --}}
+    <div class="mt-6 grid items-start gap-6 lg:grid-cols-2">
     @if (count($topChampions) > 0)
-        <section class="mt-6" aria-labelledby="champions-heading">
+        <section aria-labelledby="champions-heading">
             <h2 id="champions-heading" class="mb-3 text-lg font-semibold text-white">Champion teratas</h2>
             <ul class="divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
                 @foreach ($topChampions as $champion)
@@ -246,7 +219,7 @@
                         <x-champion-icon :name="$champion['champion_name']" :id="$champion['champion_id']" />
                         <div class="min-w-0 flex-1">
                             <p class="truncate font-medium text-white">{{ $champion['champion_name'] }}</p>
-                            <p class="text-xs tabular-nums text-slate-400">{{ $champion['games'] }} game · {{ $champion['wins'] }}M {{ $champion['games'] - $champion['wins'] }}K</p>
+                            <p class="text-xs tabular-nums text-slate-400">{{ $champion['games'] }} game · {{ $champion['wins'] }}W {{ $champion['games'] - $champion['wins'] }}L</p>
                         </div>
                         <div class="text-right text-sm tabular-nums">
                             <p class="text-slate-200">{{ \App\Support\Format::number($champion['winrate']) }}%</p>
@@ -260,7 +233,7 @@
 
     {{-- Lanes --}}
     @if (count($roles) > 0)
-        <section class="mt-6" aria-labelledby="roles-heading">
+        <section aria-labelledby="roles-heading">
             <h2 id="roles-heading" class="mb-3 text-lg font-semibold text-white">Lane</h2>
             <ul class="divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50">
                 @foreach ($roles as $role)
@@ -282,6 +255,7 @@
             </ul>
         </section>
     @endif
+    </div>
 
     {{-- Records against / with the other tracked players --}}
     @if (count($partners) > 0)
@@ -353,7 +327,7 @@
                                 'text-slate-400' => $match['is_remake'],
                                 'text-emerald-400' => ! $match['is_remake'] && $match['win'],
                                 'text-rose-400' => ! $match['is_remake'] && ! $match['win'],
-                            ])>{{ $match['is_remake'] ? 'Remake' : ($match['win'] ? 'Menang' : 'Kalah') }}</p>
+                            ])>{{ $match['is_remake'] ? 'Remake' : ($match['win'] ? 'Win' : 'Lose') }}</p>
                             <p class="text-slate-500">{{ $match['queue'] }}</p>
                             <p class="text-slate-500">{{ $match['started_at']->diffForHumans() }}</p>
                             @if ($match['score'] !== null && ! $match['is_remake'])
@@ -408,4 +382,54 @@
             Bandingkan dengan pemain lain
         </a>
     </div>
+
+    {{-- Pop-ups opened from the buttons in the header --}}
+    <x-player-panel name="mastery" title="Champion mastery" subtitle="Level dan poin mastery dari Riot, diperbarui tiap hari.">
+        @if ($masteries->isEmpty())
+            <p class="rounded-xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-400">
+                Belum ada data mastery. Data ini diambil dari Riot saat sinkron berikutnya.
+            </p>
+        @else
+            <ul class="divide-y divide-slate-800/70 overflow-hidden rounded-xl border border-slate-800 bg-slate-950/40">
+                @foreach ($masteries as $mastery)
+                    <li class="flex items-center gap-3 px-4 py-3">
+                        <x-champion-icon :name="$championNames[$mastery->champion_id] ?? ''" :id="$mastery->champion_id" />
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium text-white">{{ $championNames[$mastery->champion_id] ?? 'Champion #'.$mastery->champion_id }}</p>
+                            <p class="text-xs text-slate-500">
+                                {{ $mastery->last_played_at ? 'Terakhir dimainkan '.$mastery->last_played_at->diffForHumans() : 'Belum ada data waktu main' }}
+                            </p>
+                        </div>
+                        <div class="text-right text-sm tabular-nums">
+                            <p class="font-semibold text-amber-300">Level {{ $mastery->level }}</p>
+                            <p class="text-xs text-slate-400">{{ number_format($mastery->points, 0, ',', '.') }} poin</p>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-player-panel>
+
+    <x-player-panel name="achievements" title="Achievement"
+                    :subtitle="collect($achievements)->whereNotNull('earned_at')->count().' dari '.count($achievements).' pencapaian diraih. Yang sudah diraih tampil di atas.'">
+        <ul class="grid gap-3 sm:grid-cols-2">
+            @foreach ($achievements as $achievement)
+                <li @class([
+                    'flex items-center gap-3 rounded-xl border p-3',
+                    'border-amber-500/30 bg-amber-500/5' => $achievement['earned_at'],
+                    'border-slate-800 bg-slate-900/30 opacity-50' => ! $achievement['earned_at'],
+                ])>
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-xl {{ $achievement['earned_at'] ? '' : 'grayscale' }}" aria-hidden="true">{{ $achievement['icon'] }}</span>
+                    <div class="min-w-0">
+                        <p class="truncate font-semibold text-white">{{ $achievement['name'] }}</p>
+                        <p class="text-xs text-slate-400">{{ $achievement['description'] }}</p>
+                        <p class="text-xs text-slate-500">
+                            {{ $achievement['earned_at'] ? 'Diraih '.$achievement['earned_at']->translatedFormat('j M Y') : 'Belum diraih' }}
+                        </p>
+                    </div>
+                </li>
+            @endforeach
+        </ul>
+    </x-player-panel>
+  </div>
 @endsection

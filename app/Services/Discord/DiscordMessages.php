@@ -76,8 +76,8 @@ final class DiscordMessages
         $queue = MatchQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}";
 
         [$title, $color] = match (true) {
-            $allWon => ['✅ Menang', self::GREEN],
-            $allLost => ['❌ Kalah', self::RED],
+            $allWon => ['✅ Win', self::GREEN],
+            $allLost => ['❌ Lose', self::RED],
             default => ['⚔️ Teman melawan teman', self::SKY],
         };
 
@@ -125,7 +125,7 @@ final class DiscordMessages
                         $item['label'],
                         $this->escape($g['player']->name),
                         $this->escape($g['champion_name']),
-                        $g['win'] ? 'menang' : 'kalah',
+                        $g['win'] ? 'win' : 'lose',
                         $g['kills'], $g['deaths'], $g['assists'],
                         $g['score'],
                         $g['badge'] ? " ({$g['badge']})" : '',

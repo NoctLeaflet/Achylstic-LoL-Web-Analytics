@@ -92,4 +92,33 @@ class MatchListPageTest extends TestCase
             ->assertSee('href="'.route('matches.index').'"', false)
             ->assertSee('Belum ada match untuk pilihan ini');
     }
+
+    public function test_friends_who_played_the_same_match_are_framed_together(): void
+    {
+        $players = array_map(fn ($n) => $this->makePlayer("P{$n}"), range(1, 3));
+        $solo = $this->makePlayer('Solo');
+        $this->addTeamGame($players, [], true, startedAt: now()->subHours(2));     // three friends, one team
+        $this->addGame($solo, [], startedAt: now()->subHours(5));                   // an ordinary single game
+
+        $html = $this->get('/matches')->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, 'role="group"'));
+        $this->assertStringContainsString('3 teman main bareng', $html);
+        $this->assertStringContainsString('border-sky-400/60', $html);              // all won: blue frame
+        // The three rows sit inside the group, the single game does not get one.
+        $this->assertSame(4, substr_count($html, 'href="'.url('/matches/SG2_')));
+    }
+
+    public function test_friends_against_each_other_are_marked_as_such_and_a_lost_group_is_red(): void
+    {
+        [$a, $b, $c, $d] = array_map(fn ($n) => $this->makePlayer("F{$n}"), range(1, 4));
+        $this->addTeamGame([$a], [$b], true, startedAt: now()->subHours(2));        // friends on opposite teams
+        $this->addTeamGame([$c, $d], [], false, startedAt: now()->subHours(6));     // two friends lose together
+
+        $html = $this->get('/matches')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Teman melawan teman', $html);
+        $this->assertStringContainsString('border-rose-400/60', $html);
+        $this->assertSame(2, substr_count($html, 'role="group"'));
+    }
 }

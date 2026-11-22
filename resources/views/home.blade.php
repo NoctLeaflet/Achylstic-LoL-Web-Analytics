@@ -50,7 +50,7 @@
                 ['Grafik LP', 'Naik turunnya LP dari waktu ke waktu, karena snapshot rank disimpan secara berkala.', 'M4 19V5m0 14h16M8 15l3-4 3 2 4-6'],
                 ['Compare', 'Adu 2 sampai 5 pemain dengan radar chart dan grafik batang: KDA, CS, damage, vision, dan gold per menit.', 'M12 3v18M5 8l-3 7h6L5 8zm14 0l-3 7h6l-3-7zM5 8h14'],
                 ['Detail match', 'Scoreboard 10 pemain dengan skor, badge MVP dan ACE, plus item, skill, dan rune tiap pemain.', 'M5 4h14v16H5zM9 8h6M9 12h6M9 16h3'],
-                ['Duo & head-to-head', 'Rekor menang kalah saat satu tim dan saat berhadapan dengan teman sendiri.', 'M16 11a4 4 0 10-8 0m-4 9a8 8 0 0116 0'],
+                ['Duo & head-to-head', 'Rekor win dan lose saat satu tim dan saat berhadapan dengan teman sendiri.', 'M16 11a4 4 0 10-8 0m-4 9a8 8 0 0116 0'],
                 ['Notifikasi Discord', 'Kabar match baru, naik atau turun rank, dan win streak bisa dikirim ke server Discord grup.', 'M15 17h5l-1.4-1.4A7 7 0 0018 11V8a6 6 0 10-12 0v3a7 7 0 01-.6 4.6L4 17h5m6 0a3 3 0 11-6 0'],
             ];
         @endphp

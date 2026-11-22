@@ -46,6 +46,9 @@
             open: null,
             matchup: null,
             metricsOpen: false,
+            lanesOpen: false,
+            performanceOpen: false,
+            perfId: @js($performance[0]['id'] ?? null),
             returnFocus: null,
             toggle(id) { this.open = this.open === id ? null : id },
             openMatchup(position, event) {
@@ -61,9 +64,11 @@
                 const lane = new URLSearchParams(window.location.search).get('vs');
                 if (lane && @js($matchupPositions).includes(lane)) { this.matchup = lane; }
                 if (@js($metrics !== null) && new URLSearchParams(window.location.search).has('metrics')) { this.metricsOpen = true; }
+                if (@js($lanes !== []) && new URLSearchParams(window.location.search).has('lanes')) { this.lanesOpen = true; }
+                if (@js($performance !== []) && new URLSearchParams(window.location.search).has('performance')) { this.performanceOpen = true; }
             },
          }"
-         x-effect="document.body.classList.toggle('overflow-hidden', matchup !== null || metricsOpen)">
+         x-effect="document.body.classList.toggle('overflow-hidden', matchup !== null || metricsOpen || lanesOpen || performanceOpen)">
         <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p class="max-w-3xl text-xs text-slate-500">
                 Klik seorang pemain untuk melihat item, urutan skill, dan rune-nya. Skor adalah penilaian kami dari KDA, partisipasi kill, damage, vision, gold, dan CS dibanding 9 pemain lain di match ini, normalnya 0-100 dan bisa lebih dari 100 untuk permainan luar biasa (bukan skor resmi Riot).
@@ -75,6 +80,20 @@
                         class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-sm font-medium text-indigo-300 outline-none transition hover:bg-indigo-500/20 focus-visible:ring-2 focus-visible:ring-indigo-400">
                     <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17V3m0 14h14M6 13l3-4 3 2 4-6" /></svg>
                     Metrics
+                </button>
+            @endif
+            @if ($lanes !== [])
+                <button type="button" @click="lanesOpen = true"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-300 outline-none transition hover:bg-emerald-500/20 focus-visible:ring-2 focus-visible:ring-emerald-400">
+                    <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14M7 3v4M13 8v4M9 13v4" /></svg>
+                    Lanes
+                </button>
+            @endif
+            @if ($performance !== [])
+                <button type="button" @click="performanceOpen = true"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-3 py-1.5 text-sm font-medium text-violet-300 outline-none transition hover:bg-violet-500/20 focus-visible:ring-2 focus-visible:ring-violet-400">
+                    <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12l4-5 3 3 4-6 5 7" /><path d="M2 17h16" /></svg>
+                    Performance
                 </button>
             @endif
             @if ($matchups !== [])
@@ -97,7 +116,7 @@
                             'bg-slate-500/20 text-slate-300 ring-slate-500/40' => $match['is_remake'],
                             'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30' => ! $match['is_remake'] && $team['win'],
                             'bg-rose-500/15 text-rose-300 ring-rose-500/30' => ! $match['is_remake'] && ! $team['win'],
-                        ])>{{ $match['is_remake'] ? 'Remake' : ($team['win'] ? 'Menang' : 'Kalah') }}</span>
+                        ])>{{ $match['is_remake'] ? 'Remake' : ($team['win'] ? 'Win' : 'Lose') }}</span>
                     </h2>
                     <p class="text-sm tabular-nums text-slate-400">
                         {{ $team['kills'] }} / {{ $team['deaths'] }} / {{ $team['assists'] }}
@@ -227,6 +246,14 @@
 
         @if ($metrics !== null)
             <x-metrics-modal :metrics="$metrics" />
+        @endif
+
+        @if ($lanes !== [])
+            <x-lanes-modal :lanes="$lanes" />
+        @endif
+
+        @if ($performance !== [])
+            <x-performance-modal :performance="$performance" :match="$match" />
         @endif
     </div>
 @endsection

@@ -10,7 +10,9 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('riot:sync-matches {--count=20 : Number of recent match ids to request per player and game mode (1-100)}')]
+#[Signature('riot:sync-matches
+    {--count=20 : Number of recent match ids to request per player and game mode (1-100)}
+    {--quick : First ask for the 5 newest ids only and skip a player when nothing is new (for the frequent runs)}')]
 #[Description('Fetch new matches (ranked, normal, ARAM...) of every active player; details are only fetched for matches not stored yet')]
 class SyncMatchesCommand extends Command
 {
@@ -37,7 +39,7 @@ class SyncMatchesCommand extends Command
 
         foreach ($players as $player) {
             try {
-                $new = $matches->syncPlayer($player, $count);
+                $new = $matches->syncPlayer($player, $count, (bool) $this->option('quick'));
             } catch (RiotAuthException $e) {
                 // The key is rejected for every player, so stop right away.
                 $this->error($e->getMessage());

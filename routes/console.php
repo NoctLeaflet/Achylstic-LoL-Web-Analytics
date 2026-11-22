@@ -1,7 +1,9 @@
 <?php
 
+use App\Services\Sync\SchedulerHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -25,10 +27,23 @@ Schedule::command('riot:sync-ranks')
     ->withoutOverlapping(30)
     ->appendOutputTo(storage_path('logs/riot-sync.log'));
 
+// Full pass: every tracked mode of every player. Catches anything the quick pass missed.
 Schedule::command('riot:sync-matches')
     ->everyThirtyMinutes()
     ->withoutOverlapping(60)
     ->appendOutputTo(storage_path('logs/riot-sync.log'));
+
+// Quick pass every 3 minutes, so a finished game shows up (and reaches Discord) within minutes: one
+// request per player, and only when it finds an unseen game the per-mode requests follow.
+Schedule::command('riot:sync-matches --quick')
+    ->everyThreeMinutes()
+    ->withoutOverlapping(10)
+    ->appendOutputTo(storage_path('logs/riot-sync.log'));
+
+// Proof that the scheduler runs at all: the admin page warns when this is more than a few minutes old.
+Schedule::call(fn () => Cache::put(SchedulerHeartbeat::KEY, now()->toIso8601String(), now()->addDay()))
+    ->name('scheduler-heartbeat')
+    ->everyMinute();
 
 // Catches up matches whose timeline (item and skill order) could not be fetched
 // right when they were stored. Offset from the match sync so they do not collide.

@@ -119,11 +119,26 @@ class ChampionMasteryTest extends TestCase
             ->assertSeeInOrder(['Jinx', 'Level 7', '245.300 poin', 'Ahri', 'Level 5', '41.000 poin']);
     }
 
-    public function test_the_player_page_has_no_mastery_section_without_data(): void
+    public function test_the_mastery_pop_up_explains_when_there_is_no_data(): void
     {
         $player = $this->makePlayer('Alpha');
         Http::fake();
 
-        $this->get(route('players.show', $player))->assertOk()->assertDontSee('Champion mastery');
+        $this->get(route('players.show', $player))->assertOk()->assertSee('Belum ada data mastery')->assertDontSee('Level 7');
+    }
+
+    public function test_the_player_page_has_the_menu_buttons_and_the_two_column_layout(): void
+    {
+        $player = $this->makePlayer('Alpha');
+        $this->addGame($player, ['champion_name' => 'Jinx', 'champion_id' => 222, 'team_position' => 'BOTTOM']);
+        Http::fake();
+
+        $html = $this->get(route('players.show', $player))->assertOk()->getContent();
+
+        $this->assertStringContainsString("panel = 'mastery'", $html);
+        $this->assertStringContainsString("panel = 'achievements'", $html);
+        $this->assertStringContainsString('lg:grid-cols-2', $html);
+        // Champion teratas comes before Lane (left, then right), and both are inside the same grid.
+        $this->assertTrue(strpos($html, 'champions-heading') < strpos($html, 'roles-heading'));
     }
 }

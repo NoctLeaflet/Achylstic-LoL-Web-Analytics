@@ -103,11 +103,42 @@
                 <section class="mb-6" aria-label="{{ \Illuminate\Support\Carbon::parse($day)->translatedFormat('j F Y') }}">
                     <div class="mb-2 flex items-baseline justify-between">
                         <h2 class="text-sm font-semibold text-slate-300">{{ \Illuminate\Support\Carbon::parse($day)->translatedFormat('j F Y') }}</h2>
-                        <span class="text-xs text-slate-500">{{ $wins }}M {{ $games->count() - $wins }}K</span>
+                        <span class="text-xs text-slate-500">{{ $wins }}W {{ $games->count() - $wins }}L</span>
                     </div>
-                    <div class="space-y-2">
-                        @foreach ($games as $game)
-                            <x-game-row :game="$game" :box="$game['win'] ? 'border-sky-500/25 bg-sky-500/5' : 'border-rose-500/25 bg-rose-500/5'" />
+                    {{-- Friends who played the same match are shown together in one framed group, with a wider gap to the next match --}}
+                    <div class="space-y-4">
+                        @foreach ($games->groupBy('match_id') as $group)
+                            @if ($group->count() === 1)
+                                @php $game = $group->first(); @endphp
+                                <x-game-row :game="$game" :box="$game['win'] ? 'border-sky-500/25 bg-sky-500/5' : 'border-rose-500/25 bg-rose-500/5'" />
+                            @else
+                                @php
+                                    $first = $group->first();
+                                    $allWon = $group->every(fn ($g) => $g['win']);
+                                    $allLost = $group->every(fn ($g) => ! $g['win']);
+                                @endphp
+                                <div @class([
+                                    'rounded-2xl border-l-4 border-y border-r bg-slate-900/40 p-2 sm:p-2.5',
+                                    'border-sky-400/60 border-y-slate-700/60 border-r-slate-700/60' => $allWon,
+                                    'border-rose-400/60 border-y-slate-700/60 border-r-slate-700/60' => $allLost,
+                                    'border-violet-400/60 border-y-slate-700/60 border-r-slate-700/60' => ! $allWon && ! $allLost,
+                                ]) role="group" aria-label="{{ $group->count() }} teman main bareng di match yang sama">
+                                    <p class="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-xs text-slate-400">
+                                        <span class="font-semibold text-slate-200">{{ $group->count() }} teman main bareng</span>
+                                        <span class="text-slate-600">&middot;</span>
+                                        <span>{{ $first['queue'] }}</span>
+                                        <span class="text-slate-600">&middot;</span>
+                                        <span @class(['font-semibold', 'text-sky-300' => $allWon, 'text-rose-300' => $allLost, 'text-violet-300' => ! $allWon && ! $allLost])>
+                                            {{ $allWon ? 'Win' : ($allLost ? 'Lose' : 'Teman melawan teman') }}
+                                        </span>
+                                    </p>
+                                    <div class="space-y-1.5">
+                                        @foreach ($group as $game)
+                                            <x-game-row :game="$game" :box="$game['win'] ? 'border-sky-500/25 bg-sky-500/5' : 'border-rose-500/25 bg-rose-500/5'" />
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         @endforeach
                     </div>
                 </section>

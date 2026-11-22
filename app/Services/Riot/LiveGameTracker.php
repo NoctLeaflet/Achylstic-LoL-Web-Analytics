@@ -44,7 +44,10 @@ class LiveGameTracker
         $existing = LiveGame::where('player_id', $player->id)->first();
 
         if ($existing !== null && $existing->game_id === $game['game_id']) {
-            $existing->update(['last_seen_at' => now()]);
+            // A game seen before the details were stored gets them now.
+            $existing->update(['last_seen_at' => now()] + ($existing->participants === null
+                ? ['participants' => $game['participants'], 'bans' => $game['bans']]
+                : []));
 
             return $existing;
         }
@@ -53,6 +56,8 @@ class LiveGameTracker
             'game_id' => $game['game_id'],
             'queue_id' => $game['queue_id'],
             'champion_id' => $game['champion_id'],
+            'participants' => $game['participants'],
+            'bans' => $game['bans'],
             'started_at' => $game['started_at'],
             'last_seen_at' => now(),
             'announced_at' => $game['started_at']->lt(now()->subMinutes(self::NEWS_MAX_AGE_MINUTES)) ? now() : null,

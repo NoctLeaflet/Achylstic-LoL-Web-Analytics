@@ -76,7 +76,7 @@ class DiscordWeeklyTest extends TestCase
             $this->assertSame('📅 Rangkuman minggu ini', $embed['title']);
             $this->assertStringContainsString('3 game', $embed['description']);
             $this->assertStringContainsString('**Ayam** +120 LP di Solo/Duo', $fields['🧗 Top climber']['value']);
-            $this->assertStringContainsString('**CARRY** · Ayam · Jinx (menang)', $fields['⭐ Game menonjol']['value']);
+            $this->assertStringContainsString('**CARRY** · Ayam · Jinx (win)', $fields['⭐ Game menonjol']['value']);
             $this->assertStringContainsString('**One-Trick Pony**: Ayam (100% Jinx)', $fields['🏆 Penghargaan']['value']);
 
             return true;

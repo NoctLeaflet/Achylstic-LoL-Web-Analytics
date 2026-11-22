@@ -157,10 +157,11 @@ class AchievementsTest extends TestCase
 
         $this->get(route('players.show', $player))
             ->assertOk()
-            ->assertSee('Pencapaian')
+            ->assertSee('Achievement')
             ->assertSee('Pembantai')
             ->assertSee('Diraih')
             ->assertSee('Belum diraih')
-            ->assertSee('1 dari 13');
+            ->assertSee('1/13')
+            ->assertSee('1 dari 13 pencapaian diraih');
     }
 }

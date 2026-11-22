@@ -40,7 +40,7 @@
         @if ($g['badge'])
             <p class="text-xs font-bold tracking-wide text-amber-300">{{ $g['badge'] }}</p>
         @else
-            <p class="text-xs text-slate-500">{{ $g['win'] ? 'Menang' : 'Kalah' }}</p>
+            <p class="text-xs text-slate-500">{{ $g['win'] ? 'Win' : 'Lose' }}</p>
         @endif
     </div>
 </a>

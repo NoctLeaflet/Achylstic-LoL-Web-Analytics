@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * A game one of our players is playing right now (from Riot's spectator API).
  */
-#[Fillable(['player_id', 'game_id', 'queue_id', 'champion_id', 'started_at', 'last_seen_at', 'announced_at'])]
+#[Fillable(['player_id', 'game_id', 'queue_id', 'champion_id', 'participants', 'bans', 'started_at', 'last_seen_at', 'announced_at'])]
 class LiveGame extends Model
 {
     /** A row not refreshed for this long is stale (the sync stopped, or the game ended unnoticed). */
@@ -25,6 +25,8 @@ class LiveGame extends Model
             'game_id' => 'integer',
             'queue_id' => 'integer',
             'champion_id' => 'integer',
+            'participants' => 'array',
+            'bans' => 'array',
             'started_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'announced_at' => 'datetime',

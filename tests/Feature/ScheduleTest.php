@@ -79,4 +79,25 @@ class ScheduleTest extends TestCase
         $this->assertSame('0 4 * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
     }
+
+    public function test_a_quick_match_check_runs_every_three_minutes_next_to_the_full_one(): void
+    {
+        $this->artisan('schedule:list')->assertSuccessful();
+
+        $quick = collect(app(Schedule::class)->events())->first(fn (Event $e) => str_contains((string) $e->command, 'riot:sync-matches --quick'));
+
+        $this->assertNotNull($quick);
+        $this->assertSame('*/3 * * * *', $quick->expression);
+        $this->assertTrue($quick->withoutOverlapping);
+    }
+
+    public function test_the_scheduler_stamps_a_heartbeat_every_minute(): void
+    {
+        $this->artisan('schedule:list')->assertSuccessful();
+
+        $beat = collect(app(Schedule::class)->events())->first(fn (Event $e) => $e->description === 'scheduler-heartbeat');
+
+        $this->assertNotNull($beat);
+        $this->assertSame('* * * * *', $beat->expression);
+    }
 }

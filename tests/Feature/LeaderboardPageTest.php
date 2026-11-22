@@ -44,7 +44,7 @@ class LeaderboardPageTest extends TestCase
         $response->assertSeeInOrder(['Emerald IV', '7 LP']);
         $response->assertSeeInOrder(['Gold II', '54 LP']);
         $response->assertSee('60.0%');      // 30 wins of 50 games
-        $response->assertSee('30M 20K');    // wins and losses (Menang / Kalah)
+        $response->assertSee('30W 20L');    // wins and losses
         $this->assertSame(['Emerald Emmy', 'Goldie'], array_map(fn ($row) => $row['player']->name, $response->viewData('rows')));
     }
 

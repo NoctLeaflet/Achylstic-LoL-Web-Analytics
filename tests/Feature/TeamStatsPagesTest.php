@@ -101,7 +101,7 @@ class TeamStatsPagesTest extends TestCase
         $pairs = $response->viewData('pairs');
         $this->assertCount(3, $pairs);
 
-        $response->assertSee('2M 0K');                  // Alpha & Beta together
+        $response->assertSee('2W 0L');                  // Alpha & Beta together
         $response->assertSee('100.0%');
         $response->assertSee('(2 game)');
         $response->assertSee('Belum pernah');           // never met: Beta & Gamma, Alpha & Gamma together, ...
@@ -141,8 +141,8 @@ class TeamStatsPagesTest extends TestCase
         $response->assertSee('Main bareng teman');
         $response->assertSee('Bebek');
         $response->assertSee("/players/{$b->id}", false);
-        $response->assertSee('1M 0K');   // together
-        $response->assertSee('0M 1K');   // Alpha lost the head-to-head
+        $response->assertSee('1W 0L');   // together
+        $response->assertSee('0W 1L');   // Alpha lost the head-to-head
 
         $partners = $response->viewData('partners');
         $this->assertCount(1, $partners);

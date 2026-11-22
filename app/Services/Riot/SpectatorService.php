@@ -15,7 +15,7 @@ class SpectatorService
     /**
      * The game the player is in, or null when they are not playing (Riot answers 404).
      *
-     * @return array{game_id: int, queue_id: int|null, champion_id: int|null, started_at: Carbon}|null
+     * @return array{game_id: int, queue_id: int|null, champion_id: int|null, participants: list<array<string, mixed>>, bans: list<array<string, int>>, started_at: Carbon}|null
      */
     public function activeGame(Player $player): ?array
     {
@@ -36,6 +36,16 @@ class SpectatorService
             'game_id' => (int) $game['gameId'],
             'queue_id' => isset($game['gameQueueConfigId']) ? (int) $game['gameQueueConfigId'] : null,
             'champion_id' => isset($me['championId']) ? (int) $me['championId'] : null,
+            'participants' => collect($game['participants'] ?? [])->map(fn (array $p) => [
+                'puuid' => (string) ($p['puuid'] ?? ''),
+                'riot_id' => (string) ($p['riotId'] ?? ''),
+                'champion_id' => (int) ($p['championId'] ?? 0),
+                'team_id' => (int) ($p['teamId'] ?? 0),
+            ])->all(),
+            'bans' => collect($game['bannedChampions'] ?? [])->map(fn (array $b) => [
+                'champion_id' => (int) ($b['championId'] ?? 0),
+                'team_id' => (int) ($b['teamId'] ?? 0),
+            ])->filter(fn (array $b) => $b['champion_id'] > 0)->values()->all(),
             // gameStartTime is 0 while the game is still loading.
             'started_at' => $startMs > 0 ? Carbon::createFromTimestampMs($startMs) : now(),
         ];

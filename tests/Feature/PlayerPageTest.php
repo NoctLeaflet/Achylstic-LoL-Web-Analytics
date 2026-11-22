@@ -46,7 +46,7 @@ class PlayerPageTest extends TestCase
         $response->assertSee('Level 321');
         $response->assertSee('Gold II');
         $response->assertSee('54 LP');
-        $response->assertSee('12M 8K');
+        $response->assertSee('12W 8L');
 
         // Averages of the 3 counted games.
         $this->assertSame(3, $response->viewData('stats')['games']);

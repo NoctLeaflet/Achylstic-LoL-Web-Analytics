@@ -94,6 +94,7 @@ class GameModesTest extends TestCase
 
     public function test_every_tracked_game_mode_is_fetched_and_stored_with_its_queue_id(): void
     {
+        config(['services.riot.tracked_queues' => [420, 440, 400, 450, 2400]]);   // Mayhem is off by default but still supported
         $player = $this->makePlayer('Alpha');
         $payloads = [
             'SG2_SOLO' => RiotFixtures::match('SG2_SOLO', [$player->puuid], queueId: 420),
@@ -385,7 +386,7 @@ class GameModesTest extends TestCase
         $messages = Http::recorded(fn (Request $request) => $request->url() === self::URL)->map(fn ($pair) => $pair[0]->data())->values()->all();
 
         $this->assertCount(1, $messages);
-        $this->assertSame('✅ Menang · ARAM Mayhem', $messages[0]['embeds'][0]['title']);
+        $this->assertSame('✅ Win · ARAM Mayhem', $messages[0]['embeds'][0]['title']);
         $this->assertSame('🔥 Win streak 3!', $messages[0]['embeds'][1]['title']);
         $this->assertSame('**Ayam** menang 3 game berturut-turut.', $messages[0]['embeds'][1]['description']);
     }

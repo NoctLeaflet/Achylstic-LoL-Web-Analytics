@@ -49,7 +49,11 @@ Everyone in the group ranked by tier, division and LP. Switch between Solo/Duo a
 
 <img src="docs/screenshots/matches.png" alt="Match list with most played champions and roles" width="860">
 
-Every stored game of the group, newest first and grouped by day, with each player's champion, K/D/A, KDA, CS/min, kill participation and score. Filter by player and by game mode; the side panels show the **most played champions** and **role split** (with winrates) of that selection.
+Every stored game of the group, newest first and grouped by day, with each player's champion, K/D/A, KDA, CS/min, kill participation and score. Filter by player and by game mode; the side panels show the **most played champions** and **role split** (with winrates) of that selection. Friends who played the same match are shown together in one framed group ("5 teman main bareng", blue when they won, red when they lost, violet when they faced each other), with a wider gap to the next match. Results are written as Win / Lose.
+
+### Live
+
+`/live` shows who of the group is in a game right now (queue, running timer, both teams with the friends highlighted, and bans), plus a status for every player: in a game, just finished, or not playing. Riot has no "online" status, so that is all that can be known. The page refreshes itself every 30 seconds.
 
 ### Player page
 
@@ -58,6 +62,7 @@ Every stored game of the group, newest first and grouped by day, with each playe
 - **LP over time** from stored rank snapshots (a line chart of the climb)
 - Averages: KDA, CS/min, damage/min, gold/min and vision/min
 - **Performance trend**: the last 10 games against the up to 40 games before them for KDA, CS/min, damage/min, vision/min and winrate, with the change in percent
+- **Header menu**: buttons for the season recap, champion mastery and achievements, each opening as a pop-up; top champions and lanes sit side by side
 - **Lanes**: games, share, KDA and winrate per lane
 - **Rank goal**: the admin can set a Solo/Duo target (for example Gold I); the page shows the progress, the LP to go and an estimate of the days left from the pace of the last 14 days
 - **Achievements**: 13 badges computed from stored data (100 and 500 games, 10 wins in a row, a deathless win, 20 kills, 25 assists, 100 vision score, 50 games on one champion, 20 different champions, and reaching Gold, Platinum, Emerald and Diamond)
@@ -65,7 +70,7 @@ Every stored game of the group, newest first and grouped by day, with each playe
 - **Live status**: a "Sedang main" badge (also on the leaderboard) while the player is in a game
 - **Season recap**: a shareable card (`/players/{id}/recap`) for the season, the last 90 or the last 30 days: games, winrate, hours played, KDA, MVP and ACE count, longest win streak, favourite champions and lane, Solo/Duo rank change, the best game and the achievements earned. Set `SEASON_START` in `.env` when a new season begins; take a screenshot of the card to share it as an image
 - Top champions, recent matches (with a link to every match of the player), and the record with every friend, both on the same team and against each other
-- Filter by game mode: All, Solo/Duo, Flex, Normal Draft, ARAM and ARAM Mayhem
+- Filter by game mode: All, Solo/Duo, Flex, Normal Draft and ARAM
 
 ### Champions
 
@@ -97,6 +102,8 @@ LP chart of everyone in one graph, a radar chart (KDA, CS/min, damage/min, visio
 - Click a player to open their **build**: item purchases by minute, skill order and runes
 - **Compare lane**: put each role against the same role of the other team in a radar chart and a metric table
 - **Metrics**: a pop-up line chart of **gold, damage, exp and CS** of all ten players after every minute; click a champion icon to show or hide a line
+- **Lanes**: a pop-up with the five lane matchups of the game side by side
+- **Performance**: a pop-up with a gold-difference chart and per-player performance of the game
 
 <img src="docs/screenshots/lane-compare.png" alt="Lane compare pop-up with radar chart" width="640">
 
@@ -188,11 +195,13 @@ php artisan riot:sync-matches
 php artisan serve
 ```
 
-Keep the scheduler running so ranks and matches stay up to date by themselves:
+Keep the scheduler running so ranks and matches stay up to date by themselves (a finished game shows up, and reaches Discord, within about 3 minutes):
 
 ```bash
 php artisan schedule:work
 ```
+
+On Windows, double-click `start-achylstic.bat`: it opens the website and the scheduler in two windows (keep them open, or put a shortcut to it in the Startup folder). The admin page warns in amber when the scheduler is not running.
 
 To use the admin area, create an admin. The password is asked with hidden input and stored only as a hash:
 
@@ -232,7 +241,7 @@ You can show your local site through a tunnel such as VS Code port forwarding (s
 | `RIOT_ACCOUNT_REGION` | Routing for Riot ID lookups, for example `asia`. |
 | `DISCORD_WEBHOOK_URL` | Optional Discord webhook. Leave it empty to turn notifications off. |
 
-Which game modes are fetched is set in `config/services.php` (`riot.tracked_queues`). The default is Solo/Duo, Flex, Normal Draft, ARAM and ARAM Mayhem. Add `480` for Swiftplay, at the cost of one extra request per player per sync.
+Which game modes are fetched is set in `config/services.php` (`riot.tracked_queues`). The default is Solo/Duo, Flex, Normal Draft and ARAM. Add `480` for Swiftplay, at the cost of one extra request per player per sync. ARAM Mayhem (`2400`) is left out because Riot returned no Mayhem games for any player when it was checked; add it to the list if Riot starts returning them.
 
 ## Commands
 
@@ -240,7 +249,7 @@ Which game modes are fetched is set in `config/services.php` (`riot.tracked_queu
 |---|---|---|
 | `players:add {gameName} {tagLine} {--name=} {--platform=}` | Adds a player by Riot ID | |
 | `riot:sync-ranks` | Stores a rank snapshot for every active player when something changed | every 15 min |
-| `riot:sync-matches {--count=20}` | Fetches new matches, and details only for matches not stored yet | every 30 min |
+| `riot:sync-matches {--count=20} {--quick}` | Fetches new matches, and details only for matches not stored yet. `--quick` first asks for the 5 newest ids (one request per player) and only does the full pass when something is new | full every 30 min, quick every 3 min |
 | `riot:sync-timelines {--limit=30}` | Fetches item purchases, skill order and the per-minute gold, damage, exp and CS for stored matches (use `--limit=200` to catch up after an update) | at :15 and :45 |
 | `players:relink {--dry-run}` | Looks up every player's PUUID again from their Riot ID. Needed after switching to a Riot API key from another application, because PUUIDs are tied to the key (symptom: HTTP 400 on every player) | |
 | `riot:sync-live` | Checks which active players are in a game right now and announces new games in Discord | every 2 min |

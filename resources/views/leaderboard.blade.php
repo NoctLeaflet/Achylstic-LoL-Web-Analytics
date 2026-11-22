@@ -132,7 +132,7 @@
                             <td class="hidden whitespace-nowrap py-3 pr-4 text-right tabular-nums text-slate-400 sm:table-cell">
                                 @if ($snapshot)
                                     <span class="text-slate-200">{{ $row['games'] }}</span>
-                                    <span class="text-xs text-slate-500">({{ $snapshot->wins }}M {{ $snapshot->losses }}K)</span>
+                                    <span class="text-xs text-slate-500">({{ $snapshot->wins }}W {{ $snapshot->losses }}L)</span>
                                 @else
                                     <span class="text-slate-600">–</span>
                                 @endif

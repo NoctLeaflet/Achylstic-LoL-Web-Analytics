@@ -49,8 +49,8 @@ class MatchPageTest extends TestCase
         $response->assertSee('30:00');
         $response->assertSee('Tim Biru');
         $response->assertSee('Tim Merah');
-        $response->assertSee('Menang');
-        $response->assertSee('Kalah');
+        $response->assertSee('Win');
+        $response->assertSee('Lose');
         $response->assertSee('SG2_777');
         $response->assertSee('Patch 16.1');
 
