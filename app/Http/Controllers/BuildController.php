@@ -43,6 +43,7 @@ class BuildController extends Controller
                 'build' => null,
                 'champion' => ['champion_id' => $championId, 'name' => $anyone['name']],
                 'thinSample' => GroupBuilds::THIN_SAMPLE,
+                'topMinGames' => GroupBuilds::TOP_PLAYER_MIN_GAMES,
             ]);
         }
 
@@ -50,6 +51,7 @@ class BuildController extends Controller
             'build' => $build,
             'champion' => ['champion_id' => $championId, 'name' => $build['name']],
             'thinSample' => GroupBuilds::THIN_SAMPLE,
+            'topMinGames' => GroupBuilds::TOP_PLAYER_MIN_GAMES,
         ]);
     }
 

@@ -69,6 +69,8 @@ final class MatchHistorySummary
                     'label' => $label,
                     'games' => $games->count(),
                     'share' => (int) round($games->count() / $total * 100),
+                    'wins' => $games->where('win', true)->count(),
+                    'losses' => $games->where('win', false)->count(),
                     'winrate' => $games->isEmpty() ? null : (int) round($games->where('win', true)->count() / $games->count() * 100),
                 ];
             })

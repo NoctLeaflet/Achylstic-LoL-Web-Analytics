@@ -336,6 +336,9 @@
                                     @if ($match['badge'])
                                         <x-score-badge :badge="$match['badge']" />
                                     @endif
+                                    @if ($match['rank'] && ! $match['badge'])
+                                        <span class="text-slate-500" title="Urutan skor di match ini">#{{ $match['rank'] }}</span>
+                                    @endif
                                 </p>
                             @endif
                         </div>

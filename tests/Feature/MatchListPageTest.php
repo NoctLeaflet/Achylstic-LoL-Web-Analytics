@@ -121,4 +121,77 @@ class MatchListPageTest extends TestCase
         $this->assertStringContainsString('border-rose-400/60', $html);
         $this->assertSame(2, substr_count($html, 'role="group"'));
     }
+
+    public function test_every_row_shows_the_place_of_its_player_by_score(): void
+    {
+        [$a, $b, $c] = array_map(fn ($n) => $this->makePlayer("R{$n}"), range(1, 3));
+        $match = $this->addTeamGame([$a, $b], [$c], true);
+        $match->participants()->where('player_id', $b->id)->update(['kills' => 25, 'assists' => 15, 'deaths' => 0]);
+
+        $games = $this->get('/matches')->assertOk()->viewData('days')->flatten(1)->keyBy(fn ($g) => $g['player']->id);
+
+        $this->assertSame(1, $games[$b->id]['rank']);
+        $this->assertGreaterThan(1, $games[$a->id]['rank']);
+        $this->assertGreaterThan(1, $games[$c->id]['rank']);
+        $page = $this->get('/matches')->assertSee('Urutan skor di match ini');
+        $page->assertDontSee('#1', false);   // the MVP (best player) shows the badge instead of a place
+        $page->assertSee('#'.$games[$a->id]['rank'], false);
+    }
+
+    public function test_rows_show_items_spells_runes_and_both_line_ups(): void
+    {
+        [$a, $b, $c] = array_map(fn ($n) => $this->makePlayer("L{$n}"), range(1, 3));
+        $this->addTeamGame([$a, $b], [$c], true);
+
+        $game = $this->get('/matches')->assertOk()->viewData('days')->flatten(1)->firstWhere('player.id', $a->id);
+
+        $this->assertCount(7, $game['items']);
+        $this->assertCount(2, $game['spells']);
+        $this->assertSame(['L1', 'L2'], array_column($game['allies'], 'name'));
+        $this->assertSame(['L3'], array_column($game['enemies'], 'name'));
+        $this->assertTrue($game['allies'][0]['self']);
+        $this->assertFalse($game['allies'][1]['self']);
+        $this->get('/matches')->assertSee('aria-label="Line-up"', false);
+    }
+
+    public function test_current_streaks_are_listed_with_their_length(): void
+    {
+        $winner = $this->makePlayer('Winner');
+        $loser = $this->makePlayer('Loser');
+        $short = $this->makePlayer('Short');
+        foreach ([[$winner, [false, true, true, true]], [$loser, [true, false, false]], [$short, [false, true]]] as [$player, $results]) {
+            foreach ($results as $i => $win) {
+                $this->addGame($player, ['win' => $win], startedAt: now()->subHours(10 - $i));
+            }
+        }
+
+        $streaks = $this->get('/matches')->assertOk()->assertSee('Streak sekarang')->viewData('streaks');
+
+        $this->assertSame([['Winner', 3]], collect($streaks['wins'])->map(fn ($s) => [$s['player']->name, $s['games']])->all());
+        $this->assertSame([['Loser', 2]], collect($streaks['losses'])->map(fn ($s) => [$s['player']->name, $s['games']])->all());
+    }
+
+    public function test_streaks_follow_the_game_mode_filter(): void
+    {
+        $player = $this->makePlayer('Alpha');
+        $this->addGame($player, ['win' => true], queueId: 420, startedAt: now()->subHours(5));
+        $this->addGame($player, ['win' => true], queueId: 420, startedAt: now()->subHours(4));
+        $this->addGame($player, ['win' => false], queueId: 400, startedAt: now()->subHours(1));
+
+        $this->assertCount(0, $this->get('/matches')->viewData('streaks')['wins']);
+        $this->assertCount(1, $this->get('/matches?mode=solo')->viewData('streaks')['wins']);
+    }
+
+    public function test_roles_carry_wins_and_losses(): void
+    {
+        $player = $this->makePlayer('Alpha');
+        $this->addGame($player, ['team_position' => 'BOTTOM', 'win' => true]);
+        $this->addGame($player, ['team_position' => 'BOTTOM', 'win' => true]);
+        $this->addGame($player, ['team_position' => 'BOTTOM', 'win' => false]);
+
+        $bot = $this->get('/matches')->assertOk()->viewData('summary')['roles'][0];
+
+        $this->assertSame([2, 1], [$bot['wins'], $bot['losses']]);
+        $this->get('/matches')->assertSee('2W')->assertSee('1L');
+    }
 }

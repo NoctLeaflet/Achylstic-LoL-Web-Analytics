@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\MatchQueue;
 use App\Models\MatchParticipant;
 use App\Models\Player;
+use App\Services\Stats\CurrentStreaks;
 use App\Services\Stats\GameRows;
 use App\Services\Stats\MatchHistorySummary;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class MatchListController extends Controller
 {
     public const PER_PAGE = 30;
 
-    public function __invoke(Request $request, GameRows $gameRows, MatchHistorySummary $summary): View
+    public function __invoke(Request $request, GameRows $gameRows, MatchHistorySummary $summary, CurrentStreaks $streaks): View
     {
         $players = Player::active()->orderBy('id')->get();
         $player = $players->firstWhere('id', (int) $request->query('player'));
@@ -49,7 +50,7 @@ class MatchListController extends Controller
             ['path' => route('matches.index'), 'query' => array_filter(['player' => $player?->id, 'mode' => $mode?->slug()])],
         );
 
-        $games = $gameRows->build($paginator->getCollection());
+        $games = $gameRows->build($paginator->getCollection(), detailed: true);
 
         return view('matches.index', [
             'players' => $players,
@@ -60,6 +61,7 @@ class MatchListController extends Controller
             // Grouped by day, newest day first, each with its wins and losses.
             'days' => $games->groupBy(fn (array $g) => $g['started_at']->format('Y-m-d')),
             'summary' => $summary->build($rows),
+            'streaks' => $streaks->build($players, $mode),
             'total' => $rows->count(),
         ]);
     }

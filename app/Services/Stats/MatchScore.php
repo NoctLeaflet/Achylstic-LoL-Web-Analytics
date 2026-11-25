@@ -65,7 +65,7 @@ final class MatchScore
      * Scores for one match.
      *
      * @param  Collection<int, MatchParticipant>  $participants  every participant of the match
-     * @return array<int, array{score: int, badge: string|null}> keyed by participant row id
+     * @return array<int, array{score: int, badge: string|null, rank: int}> keyed by participant row id
      */
     public function forMatch(Collection $participants, int $durationSeconds): array
     {
@@ -116,9 +116,15 @@ final class MatchScore
             ? $this->badges($participants, $scores, $kda)
             : [];
 
+        // Place within the match by score (1 = best of all ten); equal scores go to the better KDA.
+        $order = $participants->sort(fn (MatchParticipant $a, MatchParticipant $b) => [$scores[$b->id], $kda[$b->id], $a->id] <=> [$scores[$a->id], $kda[$a->id], $b->id])
+            ->pluck('id')
+            ->flip();
+
         return $participants->mapWithKeys(fn (MatchParticipant $p) => [$p->id => [
             'score' => $scores[$p->id],
             'badge' => $badges[$p->id] ?? null,
+            'rank' => $order[$p->id] + 1,
         ]])->all();
     }
 

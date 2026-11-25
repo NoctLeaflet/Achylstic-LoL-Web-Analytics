@@ -214,6 +214,7 @@ final class PerformanceStats
                     'items' => $p->items ?? [],
                     'score' => $scores[$p->id]['score'] ?? null,
                     'badge' => $scores[$p->id]['badge'] ?? null,
+                    'rank' => $scores[$p->id]['rank'] ?? null,
                 ];
             })
             ->all();

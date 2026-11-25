@@ -136,6 +136,21 @@ class LeaderboardAndChartDataTest extends TestCase
         $this->assertNotSame($firstColour, $secondColour);
     }
 
+    public function test_a_full_group_never_shares_a_colour(): void
+    {
+        $this->assertCount(count(PlayerPalette::COLORS), array_unique(PlayerPalette::COLORS));
+
+        $ids = [];
+        foreach (range(1, count(PlayerPalette::COLORS)) as $i) {
+            $ids[] = $this->makePlayer("Q{$i}")->id;
+        }
+
+        $palette = new PlayerPalette;
+        $colours = array_map(fn (int $id) => $palette->colorFor($id), $ids);
+
+        $this->assertCount(count(PlayerPalette::COLORS), array_unique($colours));
+    }
+
     public function test_the_palette_cycles_after_its_last_colour(): void
     {
         $ids = [];

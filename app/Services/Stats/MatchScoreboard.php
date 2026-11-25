@@ -102,6 +102,7 @@ final class MatchScoreboard
             'id' => $p->id,
             'score' => $score['score'],
             'badge' => $score['badge'],
+            'rank' => $score['rank'] ?? null,
             'build' => $this->builds->build($p),
             'player' => $p->player,
             'name' => $p->player?->name ?? $this->riotName($p),

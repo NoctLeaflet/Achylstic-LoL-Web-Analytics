@@ -138,33 +138,116 @@
         @endif
     </section>
 
-    <div class="mt-6 grid gap-4 md:grid-cols-2">
-        {{-- Skill order --}}
-        <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4" aria-labelledby="skills-heading">
-            <h2 id="skills-heading" class="text-lg font-semibold text-white">Urutan skill</h2>
-            @if ($build['skills'])
-                <p class="mt-2 text-xl font-semibold tracking-wide text-sky-300">{{ $build['skills']['priority'] }}</p>
-                <p class="mt-1 text-xs text-slate-500">Dipakai di {{ $build['skills']['games'] }} game. Skill yang di-max lebih dulu.</p>
-            @else
-                <p class="mt-2 text-sm text-slate-400">Belum ada data urutan skill (timeline belum diambil).</p>
-            @endif
+    {{-- Ability order takes the wide column; the compact spells and the top players sit beside it --}}
+    <div class="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <aside class="order-2 space-y-4">
+        {{-- Summoner spells: one slim line per pair --}}
+        <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-3" aria-labelledby="spells-heading">
+            <h2 id="spells-heading" class="text-sm font-semibold text-white">Spell yang sering dipakai</h2>
+            @forelse ($build['spells'] as $pair)
+                <div class="mt-2 flex items-center gap-2" title="{{ collect($pair['spells'])->pluck('name')->implode(' + ') }}">
+                    <span class="flex gap-0.5">
+                        @foreach ($pair['spells'] as $spell)
+                            @if ($spell['icon'])
+                                <img src="{{ $spell['icon'] }}" alt="{{ $spell['name'] }}" loading="lazy" class="size-7 rounded bg-slate-800 ring-1 ring-slate-700">
+                            @else
+                                <span class="flex size-7 items-center justify-center rounded bg-slate-800 text-[9px] text-slate-400 ring-1 ring-slate-700">{{ mb_substr($spell['name'], 0, 3) }}</span>
+                            @endif
+                        @endforeach
+                    </span>
+                    <span class="flex-1 text-xs tabular-nums text-slate-500">{{ $pair['games'] }} game</span>
+                    <span @class(['text-xs font-semibold tabular-nums', 'text-emerald-400' => $pair['winrate'] >= 50, 'text-rose-400' => $pair['winrate'] < 50])>{{ $pair['winrate'] }}%</span>
+                </div>
+            @empty
+                <p class="mt-2 text-xs text-slate-400">Belum ada data spell.</p>
+            @endforelse
         </section>
 
-        {{-- Members --}}
-        <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4" aria-labelledby="who-heading">
-            <h2 id="who-heading" class="text-lg font-semibold text-white">Siapa yang memainkan</h2>
-            <ul class="mt-2 divide-y divide-slate-800/70">
+        {{-- Top players on this champion: more than TOP_PLAYER_MIN_GAMES games, best winrate first --}}
+        <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-3" aria-labelledby="who-heading">
+            <div class="flex items-baseline justify-between">
+                <h2 id="who-heading" class="text-sm font-semibold text-white">Top Players</h2>
+                <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">WR</span>
+            </div>
+            @if (count($build['players']) === 0)
+                <p class="mt-2 text-xs text-slate-400">Belum ada member dengan lebih dari {{ $topMinGames }} game di champion ini.</p>
+            @endif
+            <ul class="mt-1 divide-y divide-slate-800/70">
                 @foreach ($build['players'] as $entry)
-                    <li class="flex items-center justify-between gap-3 py-2 text-sm">
-                        <a href="{{ route('players.show', $entry['player']) }}" class="font-medium text-white hover:underline">{{ $entry['player']->name }}</a>
-                        <span class="tabular-nums text-slate-400">
-                            {{ $entry['games'] }} game ·
-                            <span @class(['font-semibold', 'text-emerald-400' => $entry['winrate'] >= 50, 'text-rose-400' => $entry['winrate'] < 50])>{{ $entry['winrate'] }}%</span>
-                        </span>
+                    <li class="flex items-center gap-3 py-2 text-sm">
+                        <x-profile-icon :player="$entry['player']" size="size-9" />
+                        <a href="{{ route('players.show', $entry['player']) }}" class="min-w-0 flex-1 truncate font-medium text-white hover:underline">{{ $entry['player']->name }}</a>
+                        <span class="text-xs tabular-nums text-slate-500">{{ $entry['games'] }} game</span>
+                        <span @class(['w-12 text-right font-semibold tabular-nums', 'text-emerald-400' => $entry['winrate'] >= 50, 'text-rose-400' => $entry['winrate'] < 50])>{{ $entry['winrate'] }}%</span>
                     </li>
                 @endforeach
             </ul>
         </section>
+        </aside>
+
+    {{-- Skill order: one row per ability, one column per level --}}
+    @php
+        $table = $build['skill_table'];
+        $abilityChip = ['Q' => 'bg-amber-500/15 text-amber-300', 'W' => 'bg-sky-500/15 text-sky-300', 'E' => 'bg-emerald-500/15 text-emerald-300', 'R' => 'bg-rose-500/15 text-rose-300'];
+        $abilityText = ['Q' => 'text-amber-300', 'W' => 'text-sky-300', 'E' => 'text-emerald-300', 'R' => 'text-rose-300'];
+    @endphp
+    <section class="order-1 min-w-0 rounded-xl border border-slate-800 bg-slate-900/50 p-4" aria-labelledby="skills-heading">
+        <h2 id="skills-heading" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-lg font-semibold uppercase tracking-wide text-white">
+            Ability order
+            @if ($table)
+                <span class="flex items-center gap-1.5 text-sm font-medium normal-case tracking-normal text-slate-500">
+                    Max:
+                    @foreach ($table['priority'] as $key)
+                        <span class="font-bold {{ $abilityText[$key] }}">{{ $key }}</span>
+                        @unless ($loop->last)<span aria-hidden="true">&rarr;</span>@endunless
+                    @endforeach
+                </span>
+            @endif
+        </h2>
+
+        @if ($table)
+            <div class="mt-3 overflow-x-auto">
+                <table class="w-full border-separate border-spacing-y-1 text-xs">
+                    <thead>
+                        <tr>
+                            <th class="w-10"></th>
+                            @for ($level = 1; $level <= $table['levels']; $level++)
+                                <th class="min-w-7 px-0.5 text-center font-medium tabular-nums text-slate-500">{{ $level }}</th>
+                            @endfor
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (['Q', 'W', 'E', 'R'] as $index => $key)
+                            @php
+                                $ability = $table['abilities'][$index] ?? null;
+                            @endphp
+                            <tr>
+                                <th scope="row" class="pr-2 text-left">
+                                    @if ($ability && $ability['icon'])
+                                        <img src="{{ $ability['icon'] }}" alt="{{ $key }}: {{ $ability['name'] }}" title="{{ $ability['name'] }}" loading="lazy" class="size-8 rounded-md ring-1 ring-slate-700">
+                                    @else
+                                        <span class="flex size-8 items-center justify-center rounded-md bg-slate-800 font-bold {{ $abilityText[$key] }}">{{ $key }}</span>
+                                    @endif
+                                </th>
+                                @for ($level = 1; $level <= $table['levels']; $level++)
+                                    <td class="h-8 border-l border-slate-800/60 px-0.5 text-center">
+                                        @if (in_array($level, $table['grid'][$key], true))
+                                            <span class="inline-flex size-6 items-center justify-center rounded font-bold {{ $abilityChip[$key] }}">{{ $key }}</span>
+                                        @endif
+                                    </td>
+                                @endfor
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">
+                Urutan dari game yang paling mirip pola umum, dari {{ $table['games'] }} game dengan data timeline. Skill yang di-max lebih dulu ada di baris Max.
+            </p>
+        @else
+            <p class="mt-2 text-sm text-slate-400">Belum ada data urutan skill (timeline belum diambil).</p>
+        @endif
+    </section>
     </div>
     @endif
 @endsection

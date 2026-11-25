@@ -107,6 +107,57 @@ class DataDragonService
         return $itemId ? $this->asset('item', "{$itemId}.png") : null;
     }
 
+    /**
+     * Summoner spells by numeric id (4 = Flash), with the image file name.
+     * Empty when Data Dragon cannot be reached.
+     *
+     * @return array<int, array{name: string, image: string}>
+     */
+    public function summonerSpells(): array
+    {
+        return $this->staticData('summoner-spells', function (string $version) {
+            $spells = Http::timeout(10)->get($this->baseUrl()."/cdn/{$version}/data/en_US/summoner.json")->json('data') ?? [];
+            $result = [];
+
+            foreach ($spells as $spell) {
+                $result[(int) $spell['key']] = ['name' => (string) $spell['name'], 'image' => (string) ($spell['image']['full'] ?? '')];
+            }
+
+            return $result;
+        });
+    }
+
+    public function spellIcon(?int $spellId): ?string
+    {
+        $image = $this->summonerSpells()[$spellId]['image'] ?? '';
+
+        return $image !== '' ? $this->asset('spell', $image) : null;
+    }
+
+    /**
+     * The four basic abilities of a champion in Q, W, E, R order, with their icons.
+     * Empty when Data Dragon cannot be reached.
+     *
+     * @return list<array{name: string, icon: string|null}>
+     */
+    public function championAbilities(int $championId): array
+    {
+        $file = $this->championFiles()[$championId] ?? null;
+
+        if ($file === null) {
+            return [];
+        }
+
+        return $this->staticData("abilities-{$file}", function (string $version) use ($file) {
+            $spells = Http::timeout(10)->get($this->baseUrl()."/cdn/{$version}/data/en_US/champion/{$file}.json")->json("data.{$file}.spells") ?? [];
+
+            return array_map(fn (array $spell) => [
+                'name' => (string) ($spell['name'] ?? ''),
+                'icon' => ! empty($spell['image']['full']) ? $this->asset('spell', $spell['image']['full']) : null,
+            ], array_slice($spells, 0, 4));
+        });
+    }
+
     public function profileIcon(?int $profileIconId): ?string
     {
         return $profileIconId !== null ? $this->asset('profileicon', "{$profileIconId}.png") : null;

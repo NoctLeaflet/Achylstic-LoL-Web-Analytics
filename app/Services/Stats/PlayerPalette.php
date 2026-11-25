@@ -7,7 +7,10 @@ use App\Models\Player;
 /**
  * One fixed colour per player, used by every chart so a player is always
  * recognisable. Colours follow the order of player ids, so adding a player
- * never changes the colour of an existing one.
+ * never changes the colour of an existing one. The list is ordered so that
+ * neighbours differ clearly in hue, and it is long enough that a group of up
+ * to 16 friends never shares a colour (look-alike pairs such as pink / rose /
+ * fuchsia or sky / cyan were removed).
  */
 final class PlayerPalette
 {
@@ -16,13 +19,19 @@ final class PlayerPalette
         '#38bdf8', // sky
         '#f472b6', // pink
         '#a3e635', // lime
-        '#fbbf24', // amber
-        '#a78bfa', // violet
-        '#34d399', // emerald
-        '#fb7185', // rose
-        '#22d3ee', // cyan
+        '#facc15', // yellow
+        '#8b5cf6', // violet
+        '#22c55e', // green
+        '#ef4444', // red
         '#fb923c', // orange
-        '#e879f9', // fuchsia
+        '#d946ef', // fuchsia
+        '#2dd4bf', // teal
+        '#e2e8f0', // white
+        '#d6b88a', // tan
+        '#3b82f6', // blue
+        '#fda4af', // salmon
+        '#a5b4fc', // light indigo
+        '#94a3b8', // slate
     ];
 
     /** @var list<int>|null */

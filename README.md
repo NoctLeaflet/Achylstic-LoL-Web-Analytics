@@ -39,17 +39,19 @@ The home page introduces the app with its logo, the number of tracked players an
 
 <img src="docs/screenshots/leaderboard.png" alt="Leaderboard with weekly highlights and role coverage" width="860">
 
-Everyone in the group ranked by tier, division and LP. Switch between Solo/Duo and Flex, see winrate, games played, the LP gained over the last 7 days and the **Climber of the Week**. Below the table:
+Everyone in the group ranked by tier, division and LP. Switch between Solo/Duo and Flex, see winrate and games played. A **period switch** (Hari, Minggu, Bulan, All Time) sets the LP gain, the trend line and the **Climber** (shown with the champions, lane and number of games they played in that period). Each row also has a **Form** of the last 10 ranked results as green/red dots with the current streak (W3, L2), a small **LP trend** line and a **Target** progress bar towards the rank goal. Below the table:
 
 - **Best this week**: the standout games of the last 7 days (best-rated win, most assists in a win, most takedowns in a game, lowest-rated loss). A dropdown limits them to one game mode.
 - **This week**: awards for players with at least 3 games (The Carry, One-Trick Pony, Jack of All Trades, Vision Enthusiast).
 - **Role Coverage**: who mains and who fills each lane, and which lanes the group is missing.
+- **Top champion grup**, **Duo terbaik** (best winrate together, at least 3 games) and **Winrate per role**.
+- **When the Server Plays**: a weekday-by-hour heatmap (Indonesian time, WIB) coloured from bad days (red) to good days (green), and a per-hour bar chart of wins and losses.
 
 ### Matches
 
 <img src="docs/screenshots/matches.png" alt="Match list with most played champions and roles" width="860">
 
-Every stored game of the group, newest first and grouped by day, with each player's champion, K/D/A, KDA, CS/min, kill participation and score. Filter by player and by game mode; the side panels show the **most played champions** and **role split** (with winrates) of that selection. Friends who played the same match are shown together in one framed group ("5 teman main bareng", blue when they won, red when they lost, violet when they faced each other), with a wider gap to the next match. Results are written as Win / Lose.
+Every stored game of the group, newest first and grouped by day, with each player's champion, summoner spells, keystone and secondary rune, final items, K/D/A, KDA, CS/min, kill participation, the line-up of both teams, the score and the **place by score** in that match (#1 to #10, also on the player page). The side panel adds a **Streak sekarang** list (win and lose streaks of 2 or more games) and colours the role split green and red by wins and losses. Filter by player and by game mode; the side panels show the **most played champions** and **role split** (with winrates) of that selection. Friends who played the same match are shown together in one framed group ("5 teman main bareng", blue when they won, red when they lost, violet when they faced each other), with a wider gap to the next match. Results are written as Win / Lose.
 
 ### Live
 
@@ -80,7 +82,7 @@ What the group plays: games, winrate and KDA per champion across all friends, wh
 
 ### Member builds
 
-What the friends actually play on a champion, from their own games (never from strangers in the same matches): the most used **rune pages** (keystone, picks, secondary tree and shards) with games and winrate, the most bought **final items** with the winrate of the games that had them, the usual **skill order**, and who plays the champion. Pick a champion and filter by member and game mode; a member who never played it gets a friendly "never played" page with links to widen the selection. The sample is small by nature, so the page says so and warns when a champion has fewer than 5 games. This is not a global tier list: Riot offers no global statistics, and collecting them would need tens of thousands of matches per patch.
+What the friends actually play on a champion, from their own games (never from strangers in the same matches): the most used **rune pages** (keystone, picks, secondary tree and shards) with games and winrate, the most bought **final items** with the winrate of the games that had them, the most used **summoner spell pairs** with their winrate, the **ability order** as a level 1 to 18 table with the ability icons (taken from the game that follows the common pattern most closely), and **Top Players** on the champion, sorted by winrate and then by games. Pick a champion and filter by member and game mode; a member who never played it gets a friendly "never played" page with links to widen the selection. The sample is small by nature, so the page says so and warns when a champion has fewer than 5 games. This is not a global tier list: Riot offers no global statistics, and collecting them would need tens of thousands of matches per patch.
 
 ### Best duos
 

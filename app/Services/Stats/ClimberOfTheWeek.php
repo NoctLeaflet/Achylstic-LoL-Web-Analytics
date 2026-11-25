@@ -6,6 +6,7 @@ use App\Enums\RankedQueue;
 use App\Models\Player;
 use App\Models\RankSnapshot;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
 
 /**
  * LP gained over the last 7 days, per active player, for one ranked queue.
@@ -25,9 +26,10 @@ final class ClimberOfTheWeek
      *
      * @return list<array{player: Player, gain: int, from: string, to: string, since: CarbonInterface}>
      */
-    public function ranking(RankedQueue $queue, ?CarbonInterface $now = null): array
+    public function ranking(RankedQueue $queue, ?CarbonInterface $now = null, ?int $days = self::DAYS): array
     {
-        $cutoff = ($now ?? now())->copy()->subDays(self::DAYS);
+        // $days = null means "all time": measured from each player's first snapshot.
+        $cutoff = $days === null ? Carbon::createFromTimestamp(0) : ($now ?? now())->copy()->subDays($days);
         $players = Player::active()->get();
         $playerIds = $players->modelKeys();
 
@@ -80,9 +82,9 @@ final class ClimberOfTheWeek
      *
      * @return array{player: Player, gain: int, from: string, to: string, since: CarbonInterface}|null
      */
-    public function climber(RankedQueue $queue, ?CarbonInterface $now = null): ?array
+    public function climber(RankedQueue $queue, ?CarbonInterface $now = null, ?int $days = self::DAYS): ?array
     {
-        $best = $this->ranking($queue, $now)[0] ?? null;
+        $best = $this->ranking($queue, $now, $days)[0] ?? null;
 
         return $best !== null && $best['gain'] > 0 ? $best : null;
     }

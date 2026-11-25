@@ -27,6 +27,11 @@ final class GroupBuilds
 
     public const ITEMS_SHOWN = 8;
 
+    public const SPELL_PAIRS_SHOWN = 3;
+
+    /** A member only counts as a top player of a champion with more games than this. */
+    public const TOP_PLAYER_MIN_GAMES = 5;
+
     public function __construct(
         private readonly DataDragonService $ddragon,
         private readonly ParticipantBuild $builds,
@@ -77,16 +82,78 @@ final class GroupBuilds
             'rune_pages' => $this->runePages($games),
             'items' => $this->items($games),
             'skills' => $this->skillPriority($games),
+            'skill_table' => $this->skillTable($games, $championId),
+            'spells' => $this->spells($games),
+            // Top players: only members with more than TOP_PLAYER_MIN_GAMES games, best winrate first, then the most games.
             'players' => $games->groupBy('player_id')
+                ->filter(fn (Collection $rows) => $rows->count() > self::TOP_PLAYER_MIN_GAMES)
                 ->map(fn (Collection $rows) => [
                     'player' => $rows->first()->player,
                     'games' => $rows->count(),
                     'winrate' => (int) round($rows->where('win', true)->count() / $rows->count() * 100),
                 ])
-                ->sort(fn (array $a, array $b) => [$b['games'], $a['player']->name] <=> [$a['games'], $b['player']->name])
+                ->sort(fn (array $a, array $b) => [$b['winrate'], $b['games'], $a['player']->name] <=> [$a['winrate'], $a['games'], $b['player']->name])
                 ->values()
                 ->all(),
         ];
+    }
+
+    /**
+     * The summoner spell pairs used most on the champion (Flash + Ignite), with the winrate of each pair.
+     *
+     * @param  Collection<int, MatchParticipant>  $games
+     * @return list<array{spells: list<array{name: string, icon: string|null}>, games: int, winrate: int}>
+     */
+    private function spells(Collection $games): array
+    {
+        return $games
+            ->filter(fn (MatchParticipant $p) => count($p->summoner_spells ?? []) === 2)
+            ->groupBy(function (MatchParticipant $p) {
+                $pair = array_map('intval', $p->summoner_spells);
+                sort($pair);
+
+                return implode('-', $pair);
+            })
+            ->map(fn (Collection $rows, string $key) => [
+                'spells' => array_map(fn (string $id) => [
+                    'name' => $this->ddragon->summonerSpells()[(int) $id]['name'] ?? "Spell {$id}",
+                    'icon' => $this->ddragon->spellIcon((int) $id),
+                ], explode('-', $key)),
+                'games' => $rows->count(),
+                'winrate' => (int) round($rows->where('win', true)->count() / $rows->count() * 100),
+            ])
+            ->sort(fn (array $a, array $b) => [$b['games'], $b['winrate']] <=> [$a['games'], $a['winrate']])
+            ->take(self::SPELL_PAIRS_SHOWN)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The skill order as a level-by-level table. Per level the skill most players took is looked up,
+     * and the game that follows that pattern most closely is shown (a real order, not a mix of several).
+     *
+     * @param  Collection<int, MatchParticipant>  $games
+     * @return array{grid: array<string, list<int>>, priority: list<string>, levels: int, games: int, abilities: list<array{name: string, icon: string|null}>}|null
+     */
+    private function skillTable(Collection $games, int $championId): ?array
+    {
+        $withOrder = $games->filter(fn (MatchParticipant $p) => ! empty($p->skill_order))->values();
+
+        if ($withOrder->isEmpty()) {
+            return null;
+        }
+
+        $modal = [];
+        foreach (range(0, 17) as $level) {
+            $modal[$level] = $withOrder->map(fn (MatchParticipant $p) => $p->skill_order[$level] ?? null)->filter()->countBy()->sortDesc()->keys()->first();
+        }
+
+        $representative = $withOrder
+            ->sortByDesc(fn (MatchParticipant $p) => count(array_filter(range(0, 17), fn (int $level) => ($p->skill_order[$level] ?? null) === $modal[$level])))
+            ->first();
+        $skills = $this->builds->build($representative)['skills'];
+
+        return $skills + ['games' => $withOrder->count(), 'abilities' => $this->ddragon->championAbilities($championId)];
     }
 
     /**

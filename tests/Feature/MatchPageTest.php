@@ -135,4 +135,17 @@ class MatchPageTest extends TestCase
 
         Http::assertNothingSent();
     }
+
+    public function test_every_player_gets_a_place_by_score(): void
+    {
+        $alpha = $this->makePlayer('Alpha');
+        app(MatchService::class)->store(RiotFixtures::match('SG2_888', [$alpha->puuid]), [$alpha->puuid => $alpha->id]);
+
+        $response = $this->get('/matches/SG2_888')->assertOk();
+        $places = collect($response->viewData('teams'))->pluck('participants')->flatten(1)->pluck('rank')->filter()->sort()->values()->all();
+
+        $this->assertSame(range(1, 10), $places);
+        // MVP and ACE already say it all, so only the other eight get a place.
+        $this->assertSame(8, substr_count($response->getContent(), 'Urutan skor di match ini'));
+    }
 }

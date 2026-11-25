@@ -170,4 +170,65 @@ class GroupBuildsTest extends TestCase
     {
         $this->get('/builds')->assertOk()->assertSee('Belum ada game untuk pilihan ini')->assertSee('href="'.route('builds').'"', false);
     }
+
+    public function test_the_skill_table_follows_the_most_common_pattern_per_level(): void
+    {
+        $alpha = $this->makePlayer('Alpha');
+        $common = [1, 2, 3, 1, 1, 4, 1, 2, 1, 4, 2, 4, 2, 2, 3, 4, 3, 3];
+        $odd = [3, 2, 1, 3, 3, 4, 3, 2, 3, 4, 2, 4, 2, 2, 1, 4, 1, 1];
+        $this->play($alpha, 2, 1, ['skill_order' => $common]);
+        $this->play($alpha, 1, 1, ['skill_order' => $odd]);
+
+        $table = app(GroupBuilds::class)->forChampion(103)['skill_table'];
+
+        $this->assertSame(3, $table['games']);
+        $this->assertSame(18, $table['levels']);
+        // The two identical games win over the odd one: Q is taken at level 1.
+        $this->assertSame([1, 4, 5, 7, 9], $table['grid']['Q']);
+        $this->assertSame([6, 10, 12, 16], $table['grid']['R']);
+    }
+
+    public function test_the_skill_table_is_empty_without_timeline_data(): void
+    {
+        $this->play($this->makePlayer('Alpha'), 2, 1);
+
+        $this->assertNull(app(GroupBuilds::class)->forChampion(103)['skill_table']);
+        $this->get('/builds/103')->assertOk()->assertSee('Belum ada data urutan skill');
+    }
+
+    public function test_summoner_spell_pairs_are_counted_whatever_their_order(): void
+    {
+        $alpha = $this->makePlayer('Alpha');
+        $this->play($alpha, 1, 1, ['summoner_spells' => [4, 14]]);
+        $this->play($alpha, 1, 0, ['summoner_spells' => [14, 4]]);
+        $this->play($alpha, 1, 1, ['summoner_spells' => [4, 12]]);
+
+        $spells = app(GroupBuilds::class)->forChampion(103)['spells'];
+
+        $this->assertCount(2, $spells);
+        $this->assertSame([2, 50], [$spells[0]['games'], $spells[0]['winrate']]);
+        $this->get('/builds/103')->assertOk()->assertSee('Spell yang sering dipakai');
+    }
+
+    public function test_top_players_need_more_than_five_games_and_are_sorted_by_winrate_then_games(): void
+    {
+        [$a, $b, $c, $d] = array_map(fn ($n) => $this->makePlayer("T{$n}"), range(1, 4));
+        $this->play($a, 8, 4);   // 50%, 8 games
+        $this->play($b, 6, 6);   // 100%, 6 games
+        $this->play($c, 10, 10); // 100%, 10 games
+        $this->play($d, 5, 5);   // exactly 5 games: not enough
+
+        $players = app(GroupBuilds::class)->forChampion(103)['players'];
+
+        $this->assertSame(['T3', 'T2', 'T1'], array_map(fn ($p) => $p['player']->name, $players));
+        $this->get('/builds/103')->assertOk()->assertSee('Top Players')->assertDontSee('Belum ada member dengan lebih dari');
+    }
+
+    public function test_top_players_explains_when_nobody_has_enough_games(): void
+    {
+        $this->play($this->makePlayer('Alpha'), 5, 5);
+
+        $this->assertSame([], app(GroupBuilds::class)->forChampion(103)['players']);
+        $this->get('/builds/103')->assertOk()->assertSee('Belum ada member dengan lebih dari 5 game');
+    }
 }

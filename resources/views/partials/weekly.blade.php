@@ -18,6 +18,7 @@
 
             <form method="GET" action="{{ route('leaderboard') }}#best">
                 <input type="hidden" name="queue" value="{{ $queue->slug() }}">
+                <input type="hidden" name="period" value="{{ $period->value }}">
                 <label for="best-mode" class="sr-only">Mode game</label>
                 <select id="best-mode" name="best" onchange="this.form.submit()"
                         class="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">

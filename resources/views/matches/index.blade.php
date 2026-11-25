@@ -71,7 +71,7 @@
                     <div class="mt-3 space-y-3">
                         @foreach ($summary['roles'] as $role)
                             <div>
-                                <div class="flex items-baseline justify-between text-sm">
+                                <div class="flex items-baseline justify-between gap-2 text-sm">
                                     <span class="font-medium text-slate-200">{{ $role['label'] }}</span>
                                     <span class="text-xs text-slate-500">{{ $role['games'] }} ({{ $role['share'] }}%)</span>
                                     @if ($role['winrate'] !== null)
@@ -84,12 +84,41 @@
                                         <span class="w-10 text-right text-xs text-slate-600">–</span>
                                     @endif
                                 </div>
-                                <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-800" aria-hidden="true">
-                                    <div class="h-full rounded-full bg-indigo-400" style="width: {{ $role['share'] }}%"></div>
+                                {{-- Green = wins, red = losses --}}
+                                <div class="mt-1 flex h-1.5 overflow-hidden rounded-full bg-slate-800" aria-hidden="true">
+                                    <div class="h-full bg-emerald-400" style="width: {{ $role['games'] > 0 ? $role['wins'] / $role['games'] * 100 : 0 }}%"></div>
+                                    <div class="h-full bg-rose-400" style="width: {{ $role['games'] > 0 ? $role['losses'] / $role['games'] * 100 : 0 }}%"></div>
                                 </div>
+                                <p class="mt-0.5 text-xs tabular-nums">
+                                    <span class="font-semibold text-emerald-400">{{ $role['wins'] }}W</span>
+                                    <span class="font-semibold text-rose-400">{{ $role['losses'] }}L</span>
+                                </p>
                             </div>
                         @endforeach
                     </div>
+                @endif
+            </section>
+
+            {{-- Players on a win or lose streak right now --}}
+            <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4" aria-labelledby="streaks">
+                <h2 id="streaks" class="text-xs font-bold uppercase tracking-wide text-slate-500">Streak sekarang</h2>
+                <p class="mt-1 text-xs text-slate-500">Dari game terakhir, {{ $mode ? $mode->label() : 'semua mode' }}. Minimal {{ \App\Services\Stats\CurrentStreaks::MIN_STREAK }} game.</p>
+
+                @foreach (['wins' => ['Win streak', 'text-emerald-400'], 'losses' => ['Lose streak', 'text-rose-400']] as $key => [$title, $color])
+                    @if (count($streaks[$key]) > 0)
+                        <p class="mt-3 text-xs font-bold {{ $color }}">{{ $title }}</p>
+                        @foreach ($streaks[$key] as $streak)
+                            <a href="{{ route('players.show', $streak['player']) }}" class="mt-2 flex items-center gap-2.5 hover:opacity-80">
+                                <x-profile-icon :player="$streak['player']" size="size-8" />
+                                <span class="min-w-0 flex-1 truncate text-sm font-medium text-white">{{ $streak['player']->name }}</span>
+                                <span class="text-xs font-semibold tabular-nums {{ $color }}">{{ $streak['games'] }} game</span>
+                            </a>
+                        @endforeach
+                    @endif
+                @endforeach
+
+                @if (count($streaks['wins']) + count($streaks['losses']) === 0)
+                    <p class="mt-3 text-sm text-slate-500">Tidak ada yang sedang streak.</p>
                 @endif
             </section>
         </aside>

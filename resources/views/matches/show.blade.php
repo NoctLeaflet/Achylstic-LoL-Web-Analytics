@@ -192,8 +192,15 @@
                                             'text-slate-100' => $participant['score'] >= 45 && $participant['score'] < 70,
                                             'text-rose-300' => $participant['score'] < 45,
                                         ])>{{ $participant['score'] }}</span>
-                                        @if ($participant['badge'])
-                                            <span class="mt-0.5 block"><x-score-badge :badge="$participant['badge']" /></span>
+                                        @if ($participant['badge'] || $participant['rank'])
+                                            <span class="mt-0.5 flex items-center justify-center gap-1">
+                                                @if ($participant['badge'])
+                                                    <x-score-badge :badge="$participant['badge']" />
+                                                @endif
+                                                @if ($participant['rank'] && ! $participant['badge'])
+                                                    <span class="rounded-full bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-300" title="Urutan skor di match ini">{{ \App\Support\Format::ordinal($participant['rank']) }}</span>
+                                                @endif
+                                            </span>
                                         @endif
                                     </td>
 
