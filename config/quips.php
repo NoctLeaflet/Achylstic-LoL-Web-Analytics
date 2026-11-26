@@ -76,6 +76,10 @@ return [
         'Statistik bilang menang, nexus bilang kalah. Sabar ya {name}.',
         'KDA {kda} tapi defeat. {name} korban sistem.',
         '{name} jadi satu-satunya alasan game ini nggak kalah di menit 15.',
+        'Punggung {name} butuh tukang urut, bukan defeat screen.',
+        '{name} udah gendong sejauh ini, nexusnya aja yang nggak mau diajak kerja sama.',
+        'Skor {name} bagus, hasilnya enggak. Hidup memang nggak adil.',
+        'Kalah terhormat ala {name}: statistik cakep, hati hancur.',
     ],
 
     'feeding' => [ // deaths tinggi (mis. deaths >= 10 dan KDA < 1)
@@ -95,6 +99,11 @@ return [
         'Wave-nya lewat, {name} cuma ngelihatin. Damai banget.',
         'Last hit itu fitur, bukan saran, {name}.',
         '{name} membiarkan minion hidup. Pasifis sejati.',
+        'Minion lawan kirim ucapan terima kasih buat {name}.',
+        '{cs} CS/min. {name} lagi diet gold, ya?',
+        'Cannon minion lewat gitu aja. {name}, itu uang jajanmu.',
+        '{name} farming-nya santai, kayak lagi mancing.',
+        'Gold gratis berbaris rapi, {name} memilih jalan-jalan.',
     ],
 
     'pentakill' => [
@@ -102,6 +111,12 @@ return [
         'Lima nyawa, satu {name}. Klip ini wajib diupload.',
         'Tim lawan baru sadar kalau {name} itu bos terakhirnya.',
         'PENTA! Screenshot, bingkai, gantung di ruang tamu, {name}.',
+        'Lima berturut-turut. {name} nggak kenal kata sisakan buat teman.',
+        '{champ} milik {name} lagi buka layanan antar ke fountain, lima sekaligus.',
+        'Announcer sampai capek teriak. Selamat atas pentakill-nya, {name}!',
+        'PENTAKILL. Mulai sekarang {name} boleh sombong sampai minggu depan.',
+        'Satu tim lawan jadi cuplikan highlight {name}.',
+        '{name} borong semuanya. Teman satu tim cuma bisa jadi saksi.',
     ],
 
     // ---------- Durasi game ----------
@@ -111,6 +126,12 @@ return [
         'Surrender di menit {minutes}. Seseorang di game ini nyerah duluan.',
         'Game kilat, {name}. Mie belum mateng, game udah selesai.',
         'Speedrun ranked berhasil dalam {minutes} menit.',
+        '{minutes} menit, belum sempat full item udah bubar.',
+        'Cepat amat, {name}. Kopinya masih panas.',
+        'Game {minutes} menit. Loading screen-nya hampir lebih berkesan.',
+        'Selesai dalam {minutes} menit. {name} ada janji lain, ya?',
+        'Tamat sebelum seru-serunya. Next game, {name}.',
+        '{minutes} menit aja, hemat kuota hemat emosi.',
     ],
 
     'long_game' => [ // > 40 menit
@@ -118,6 +139,12 @@ return [
         'Game sepanjang film bioskop. Popcornnya habis, {name}?',
         'Setelah {minutes} menit penuh drama, akhirnya selesai juga.',
         'Elder dragon pun bosan nungguin game ini selesai.',
+        '{minutes} menit. {name} sudah makan belum?',
+        'Inventory penuh, mental kosong. Game {minutes} menit yang melelahkan.',
+        'Game selama ini harusnya dapat uang lembur, {name}.',
+        '{minutes} menit kemudian, akhirnya ada yang ingat buat dorong nexus.',
+        'Waktu {name} masuk game, matahari masih di posisi berbeda.',
+        'Maraton {minutes} menit selesai. Peregangan dulu, {name}.',
     ],
 
     // ---------- Streak ----------
@@ -127,6 +154,12 @@ return [
         '{name} on fire. Ada yang punya alat pemadam?',
         'Win streak {streak}. Riot mulai curiga sama {name}.',
         'Jangan berhenti sekarang {name}, Hokimu belum habis.',
+        '{streak} kali menang terus. Bagi resepnya dong, {name}.',
+        'Antre di belakang {name}, tiket gendongan masih tersedia.',
+        '{name} lagi nggak bisa direm. Win ke-{streak}!',
+        'Streak {streak}. Teman-teman mendadak rajin ngajak {name} duo.',
+        '{name} menang lagi, menang terus. Lawan mulai trauma.',
+        'Sudah {streak} kemenangan. Tolong {name} disisakan buat yang lain.',
     ],
 
     'loss_streak' => [ // streak kalah >= 3
@@ -134,6 +167,12 @@ return [
         'Loss streak {streak}. Saatnya {name} pindah ke ARAM dulu.',
         'Matchmaking lagi nguji kesabaran {name}. Jangan pukul monitor ya.',
         '{name}, uninstall itu bukan solusi. Tidur itu solusi.',
+        'Kalah ke-{streak}. {name}, coba mandi dulu, siapa tahu hokinya balik.',
+        '{streak} defeat berjejer rapi. Koleksi yang tidak diinginkan, {name}.',
+        'Pelan-pelan {name}, tangga rank turunnya jangan sambil lari.',
+        'Loss streak {streak}. Grup doa bersama buat {name} sudah dibuka.',
+        '{name}, tombol "Find Match" bisa istirahat dulu.',
+        'Badai pasti berlalu, {name}. Cuma ini badainya sudah {streak} game.',
     ],
 
     // ---------- Perubahan rank ----------
@@ -143,6 +182,12 @@ return [
         '{name} resmi {tier}. Udara di atas lebih segar ya?',
         'Promosi ke {tier}. Traktirannya kapan, {name}?',
         'Welcome to {tier}, {name}. Jangan buru-buru turun lagi.',
+        'Level up! {name} sekarang warga {tier}.',
+        '{tier} unlocked. {name} resmi boleh sok ngajarin.',
+        'Border baru, gaya baru. Congrats {name}, {tier} cocok buatmu.',
+        '{name} tembus {tier}. Grup chat harap siap dipamerin.',
+        'Akhirnya {tier} juga! {name} bisa tidur nyenyak malam ini.',
+        'Tangga rank nambah satu: {name} mendarat di {tier}.',
     ],
 
     'demoted' => [
@@ -150,5 +195,11 @@ return [
         'Demote ke {tier}. Sementara aja kok, {name}. Semoga.',
         '{tier} kangen sama {name}, jadi dia mampir lagi.',
         'Turun ke {tier}. Nggak apa-apa {name}, yang penting masih main.',
+        '{name} balik ke {tier}, katanya mau reuni sama teman lama.',
+        'Pendaratan darurat di {tier}. {name} selamat, LP tidak.',
+        '{tier} lagi butuh bantuan, jadi {name} turun tangan langsung.',
+        'Jangan sedih {name}, dari {tier} pemandangan ke atas lebih jelas.',
+        '{name} mampir dulu di {tier}. Besok naik lagi, kan?',
+        'Demote itu cuma plot twist. Comeback arc {name} dimulai dari {tier}.',
     ],
 ];

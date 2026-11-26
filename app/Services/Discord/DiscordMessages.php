@@ -185,7 +185,6 @@ final class DiscordMessages
         $quip = $this->quips->pick(
             [$promoted ? 'promoted' : 'demoted'],
             ['name' => $this->escape($event->player->name), 'tier' => $to],
-            "rank|{$event->player->id}|{$event->current->id}",
         );
 
         return $this->embed([
@@ -387,7 +386,7 @@ final class DiscordMessages
             // The LP change of a single game is unknown (ranks are synced separately),
             // so lines that need {lp} are skipped rather than made up.
             'lp' => null,
-        ], "{$match->match_id}|{$p->puuid}", $used);
+        ], $used);
     }
 
     /** "Gold II · 54 LP" from the latest snapshot, for ranked games only. */
