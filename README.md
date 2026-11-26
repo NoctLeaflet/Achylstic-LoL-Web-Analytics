@@ -121,7 +121,9 @@ A **Login Admin** button leads to a small admin area where the admin can add a f
 
 Optional. A webhook posts a message when a match of the group ends, when someone is promoted or demoted, and on win streaks (3, 5, 7, 10, 15 and 20 games).
 
-The match message has one block per tracked player: champion, lane and the champion of the lane opponent, K/D/A, KDA, CS/min, kill participation, damage, and the score (normally 0 to 100, and more than 100 for an outstanding game) with an MVP or ACE badge. When a rate moved by 15% or more over the last 10 games, a line says so (for example "CS/min up 226% to 6.0 over the last 10 games, was 1.8"). The title shows the result and game mode, the footer the duration and patch.
+The match message has one card per tracked player, so players are clearly separated: profile icon and name, result, champion, lane and lane opponent, a joke, then K/D/A with KDA, CS/min with kill participation, damage with a bar, the score (with an MVP or ACE badge, otherwise the place among the ten) and the current rank for ranked games. The footer shows the mode, duration and patch; the card colour is green for a win and red for a loss.
+
+The jokes live in [config/quips.php](config/quips.php) and can be edited freely. The most notable thing about a performance picks the kind of joke (pentakill, feeding, losing as the best player, a stomp, a win or loss streak of 3+, a very long or short game, low CS, otherwise a plain win or loss); friends in the same game get different lines, and promotions and demotions have their own. A line is only used when all of its placeholders are known, so lines with `{lp}` are skipped because the LP change of one game is not known. Pentakills are only recorded for matches fetched after the `penta_kills` column was added.
 
 More messages:
 

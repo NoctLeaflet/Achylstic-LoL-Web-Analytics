@@ -250,6 +250,7 @@ class MatchService
             'kills' => (int) ($p['kills'] ?? 0),
             'deaths' => (int) ($p['deaths'] ?? 0),
             'assists' => (int) ($p['assists'] ?? 0),
+            'penta_kills' => (int) ($p['pentaKills'] ?? 0),
             'total_minions_killed' => (int) ($p['totalMinionsKilled'] ?? 0),
             'neutral_minions_killed' => (int) ($p['neutralMinionsKilled'] ?? 0),
             'gold_earned' => (int) ($p['goldEarned'] ?? 0),

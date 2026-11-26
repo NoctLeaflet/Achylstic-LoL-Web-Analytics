@@ -93,9 +93,10 @@ class DiscordNotificationsTest extends TestCase
         $messages = $this->discordMessages();
         $this->assertCount(1, $messages);
         $this->assertCount(1, $messages[0]['embeds']);
-        $this->assertSame('✅ Win · Solo/Duo', $messages[0]['embeds'][0]['title']);
-        $this->assertStringContainsString('**Ayam** · Champ0 (Top) vs Champ5', $messages[0]['embeds'][0]['description']);
-        $this->assertStringContainsString('**1/2/5** · 3.00 KDA', $messages[0]['embeds'][0]['description']);
+        $this->assertSame('✅ Win · Champ0 (Top) vs Champ5', $messages[0]['embeds'][0]['title']);
+        $this->assertSame('Ayam', $messages[0]['embeds'][0]['author']['name']);
+        $this->assertSame(['name' => '1/2/5', 'value' => '*3.00 KDA*', 'inline' => true], $messages[0]['embeds'][0]['fields'][0]);
+        $this->assertStringContainsString('Solo/Duo', $messages[0]['embeds'][0]['footer']['text']);
     }
 
     public function test_storing_the_same_match_again_does_not_announce_it_again(): void
@@ -153,8 +154,8 @@ class DiscordNotificationsTest extends TestCase
 
         $messages = $this->discordMessages();
         $this->assertCount(1, $messages);
-        $this->assertStringContainsString('**Alpha**', $messages[0]['embeds'][0]['description']);
-        $this->assertStringContainsString('**Beta**', $messages[0]['embeds'][0]['description']);
+        // One card per friend, so they are clearly separated.
+        $this->assertSame(['Alpha', 'Beta'], array_column(array_column($messages[0]['embeds'], 'author'), 'name'));
     }
 
     public function test_nothing_is_sent_when_notifications_are_off(): void
@@ -224,7 +225,7 @@ class DiscordNotificationsTest extends TestCase
 
         $embeds = $this->discordMessages()[0]['embeds'];
         $this->assertCount(1, $embeds);
-        $this->assertSame('❌ Lose · Solo/Duo', $embeds[0]['title']);
+        $this->assertStringStartsWith('❌ Lose · ', $embeds[0]['title']);
     }
 
     // ---- Rank changes -----------------------------------------------------
@@ -253,7 +254,7 @@ class DiscordNotificationsTest extends TestCase
         $messages = $this->discordMessages();
         $this->assertCount(1, $messages);
         $this->assertSame('⬆️ Naik rank!', $messages[0]['embeds'][0]['title']);
-        $this->assertSame('**Ayam** naik dari **Gold IV** ke **Gold III** di Ranked Solo/Duo (8 LP).', $messages[0]['embeds'][0]['description']);
+        $this->assertStringStartsWith('**Ayam** naik dari **Gold IV** ke **Gold III** di Ranked Solo/Duo (8 LP).', $messages[0]['embeds'][0]['description']);
     }
 
     public function test_a_demotion_is_announced(): void

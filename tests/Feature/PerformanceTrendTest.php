@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Player;
-use App\Services\Discord\DiscordMessages;
 use App\Services\Stats\PerformanceTrend;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -99,23 +98,5 @@ class PerformanceTrendTest extends TestCase
         $this->addGame($player);
 
         $this->get(route('players.show', $player))->assertOk()->assertDontSee('Tren performa');
-    }
-
-    public function test_the_discord_match_message_mentions_a_notable_change(): void
-    {
-        $player = $this->playerWithHistory();
-        $match = $player->participations()->latest('id')->first()->gameMatch;
-
-        $description = app(DiscordMessages::class)->match($match)['description'];
-
-        $this->assertStringContainsString('📈 *CS/min naik 100% jadi 6.7 dalam 10 game terakhir (sebelumnya 3.3)*', $description);
-    }
-
-    public function test_the_discord_message_stays_quiet_without_a_notable_change(): void
-    {
-        $player = $this->playerWithHistory(recentCs: 100);
-        $match = $player->participations()->latest('id')->first()->gameMatch;
-
-        $this->assertStringNotContainsString('📈', app(DiscordMessages::class)->match($match)['description']);
     }
 }

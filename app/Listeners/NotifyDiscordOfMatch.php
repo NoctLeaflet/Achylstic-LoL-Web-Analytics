@@ -33,13 +33,11 @@ class NotifyDiscordOfMatch
         }
 
         try {
-            $embed = $this->messages->match($match);
+            $embeds = $this->messages->matchCards($match);
 
-            if ($embed === null) {
+            if ($embeds === []) {
                 return;
             }
-
-            $embeds = [$embed];
 
             $winners = $match->participants()->whereNotNull('player_id')->where('win', true)->with('player')->get();
 
@@ -52,7 +50,10 @@ class NotifyDiscordOfMatch
                 }
             }
 
-            $this->notifier->send($embeds);
+            // A message holds at most 10 cards; a game with many friends and streaks needs a second one.
+            foreach (array_chunk($embeds, DiscordNotifier::MAX_EMBEDS) as $chunk) {
+                $this->notifier->send($chunk);
+            }
         } catch (Throwable $e) {
             // A notification problem must never stop the sync.
             Log::warning('Could not send the Discord match notification', ['exception' => $e::class]);

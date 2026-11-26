@@ -386,7 +386,10 @@ class GameModesTest extends TestCase
         $messages = Http::recorded(fn (Request $request) => $request->url() === self::URL)->map(fn ($pair) => $pair[0]->data())->values()->all();
 
         $this->assertCount(1, $messages);
-        $this->assertSame('✅ Win · ARAM Mayhem', $messages[0]['embeds'][0]['title']);
+        // No lane in ARAM, so the title has no position or opponent; the mode is in the footer.
+        $this->assertStringStartsWith('✅ Win · ', $messages[0]['embeds'][0]['title']);
+        $this->assertStringNotContainsString(' vs ', $messages[0]['embeds'][0]['title']);
+        $this->assertStringContainsString('ARAM Mayhem', $messages[0]['embeds'][0]['footer']['text']);
         $this->assertSame('🔥 Win streak 3!', $messages[0]['embeds'][1]['title']);
         $this->assertSame('**Ayam** menang 3 game berturut-turut.', $messages[0]['embeds'][1]['description']);
     }

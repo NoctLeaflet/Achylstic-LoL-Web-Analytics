@@ -25,7 +25,7 @@ final class DiscordNotifier
     private const MAX_WAIT_SECONDS = 10;
 
     /** Discord accepts at most 10 embeds per message. */
-    private const MAX_EMBEDS = 10;
+    public const MAX_EMBEDS = 10;
 
     /** True when a valid webhook URL is configured. */
     public function enabled(): bool

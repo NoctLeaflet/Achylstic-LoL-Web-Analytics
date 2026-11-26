@@ -10,12 +10,13 @@ use App\Models\GameMatch;
 use App\Models\LiveGame;
 use App\Models\MatchParticipant;
 use App\Models\Player;
+use App\Models\RankSnapshot;
 use App\Services\Achievements\AchievementCatalog;
 use App\Services\Riot\DataDragonService;
 use App\Services\Stats\MatchScore;
-use App\Services\Stats\PerformanceTrend;
 use App\Services\Stats\RankScore;
 use App\Services\Stats\WeeklyHighlights;
+use App\Services\Stats\WinStreak;
 use App\Support\Format;
 use Illuminate\Support\Collection;
 use Throwable;
@@ -39,6 +40,9 @@ final class DiscordMessages
 
     private const AMBER = 0xF59E0B;
 
+    /** A win or loss streak of this length gets its own kind of joke. */
+    private const QUIP_STREAK = 3;
+
     private const POSITIONS = [
         'TOP' => 'Top',
         'JUNGLE' => 'Jungle',
@@ -49,46 +53,50 @@ final class DiscordMessages
 
     public function __construct(
         private readonly MatchScore $scores,
-        private readonly PerformanceTrend $trends,
         private readonly DataDragonService $ddragon,
+        private readonly QuipPicker $quips,
+        private readonly WinStreak $streaks,
     ) {}
 
     /**
-     * A finished match with its tracked players. Null when none of the
-     * participants is one of our players.
+     * A finished match as one card per tracked player, so players are clearly
+     * separated: result, champion and lane opponent, a joke, and the numbers.
+     * Empty when none of the participants is one of our players.
      *
-     * @return array<string, mixed>|null
+     * @return list<array<string, mixed>>
      */
-    public function match(GameMatch $match): ?array
+    public function matchCards(GameMatch $match): array
     {
-        $participants = $match->participants()->whereNotNull('player_id')->with('player')->orderBy('team_id')->orderBy('id')->get();
+        $tracked = $match->participants()->whereNotNull('player_id')->with('player')->orderBy('team_id')->orderBy('id')->get()
+            ->sortBy(fn (MatchParticipant $p) => [$p->team_id, array_search($p->team_position, array_keys(self::POSITIONS), true), $p->id])
+            ->values();
 
-        if ($participants->isEmpty()) {
-            return null;
+        if ($tracked->isEmpty()) {
+            return [];
         }
 
         $everyone = $match->participants()->get();
         $scores = $this->scores->forMatch($everyone, $match->game_duration);
+        $names = $this->championNames();
+        $usedQuips = [];
+        $cards = [];
 
-        $wins = $participants->where('win', true)->count();
-        $allWon = $wins === $participants->count();
-        $allLost = $wins === 0;
-        $queue = MatchQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}";
+        foreach ($tracked as $index => $p) {
+            $card = $this->playerCard($p, $everyone, $match, $scores, $names, $usedQuips);
 
-        [$title, $color] = match (true) {
-            $allWon => ['✅ Win', self::GREEN],
-            $allLost => ['❌ Lose', self::RED],
-            default => ['⚔️ Teman melawan teman', self::SKY],
-        };
+            // Discord merges embeds that share a URL, so every card after the first gets its own.
+            $url = $this->siteUrl('matches.show', ['gameMatch' => $match->match_id] + ($index > 0 ? ['p' => $p->id] : []));
+            $card['url'] = $url;
 
-        return $this->embed([
-            'title' => "{$title} · {$queue}",
-            'description' => $participants->map(fn (MatchParticipant $p) => $this->participantBlock($p, $everyone, $match, $scores, $participants->count() > 1 && ! $allWon && ! $allLost))->implode("\n\n"),
-            'color' => $color,
-            'url' => $this->siteUrl('matches.show', ['gameMatch' => $match->match_id]),
-            'timestamp' => $match->game_start_at->copy()->addSeconds($match->game_duration)->toIso8601String(),
-            'footer' => ['text' => Format::duration($match->game_duration).$this->patch($match->game_version)],
-        ]);
+            if ($index === $tracked->count() - 1) {
+                // The moment the game ended.
+                $card['timestamp'] = $match->game_start_at->copy()->addSeconds($match->game_duration)->toIso8601String();
+            }
+
+            $cards[] = $this->embed($card);
+        }
+
+        return $cards;
     }
 
     /**
@@ -174,6 +182,12 @@ final class DiscordMessages
         $from = RankScore::tierLabel($event->previous->tier, $event->previous->rank);
         $to = RankScore::tierLabel($event->current->tier, $event->current->rank);
 
+        $quip = $this->quips->pick(
+            [$promoted ? 'promoted' : 'demoted'],
+            ['name' => $this->escape($event->player->name), 'tier' => $to],
+            "rank|{$event->player->id}|{$event->current->id}",
+        );
+
         return $this->embed([
             'title' => $promoted ? '⬆️ Naik rank!' : '⬇️ Turun rank',
             'description' => sprintf(
@@ -184,7 +198,7 @@ final class DiscordMessages
                 $to,
                 $event->queue->label(),
                 $event->current->league_points,
-            ),
+            ).($quip ? "\n💬 *{$quip}*" : ''),
             'color' => $promoted ? self::GREEN : self::RED,
             'url' => $this->siteUrl('players.show', ['player' => $event->player->id, 'queue' => $event->queue->slug()]),
         ]);
@@ -273,65 +287,150 @@ final class DiscordMessages
     }
 
     /**
-     * One block per tracked player: champion and lane opponent, K/D/A, the per-minute
-     * and per-game numbers, the score of MatchScore (with MVP/ACE).
+     * The card of one tracked player: result, champion and lane opponent as the
+     * title, a joke, and K/D/A, CS, damage, score (with MVP/ACE or the place in
+     * the match) and the current rank as fields.
      *
      * @param  Collection<int, MatchParticipant>  $everyone  all participants of the match
+     * @param  array<int, array{score: int, badge: string|null, rank: int}>  $scores
+     * @param  array<int, string>  $names  champion display names by champion id
+     * @param  list<string>  $usedQuips
+     * @return array<string, mixed>
      */
-    private function participantBlock(MatchParticipant $p, Collection $everyone, GameMatch $match, array $scores, bool $showResult): string
+    private function playerCard(MatchParticipant $p, Collection $everyone, GameMatch $match, array $scores, array $names, array &$usedQuips): array
     {
         $minutes = max($match->game_duration, 1) / 60;
         $cs = $p->total_minions_killed + $p->neutral_minions_killed;
         $takedowns = $p->kills + $p->assists;
         $kda = round($takedowns / max($p->deaths, 1), 2);
         $teamKills = max((int) $everyone->where('team_id', $p->team_id)->sum('kills'), 1);
+        $topDamage = max((int) $everyone->max('total_damage_dealt_to_champions'), 1);
         $position = self::POSITIONS[$p->team_position] ?? null;
         $opponent = $p->team_position
             ? $everyone->first(fn (MatchParticipant $o) => $o->team_id !== $p->team_id && $o->team_position === $p->team_position)
             : null;
-
+        $champion = $this->escape($names[$p->champion_id] ?? $p->champion_name);
+        $enemy = $opponent ? $this->escape($names[$opponent->champion_id] ?? $opponent->champion_name) : null;
         $score = $scores[$p->id] ?? null;
-        $lines = [sprintf(
-            '%s**%s** · %s%s%s',
-            $showResult ? ($p->win ? '✅ ' : '❌ ') : '',
-            $this->escape($p->player->name),
-            $this->escape($p->champion_name),
-            $position ? " ({$position})" : '',
-            $opponent ? ' vs '.$this->escape($opponent->champion_name) : '',
-        )];
 
-        $lines[] = sprintf(
-            '**%d/%d/%d** · %s KDA · %s CS/min · %d CS',
-            $p->kills, $p->deaths, $p->assists, Format::number($kda, 2), Format::number($cs / $minutes, 1), $cs,
-        );
-        $lines[] = sprintf(
-            '%d%% kill participation · %s damage',
-            min(100, round($takedowns / $teamKills * 100)),
-            $this->compact($p->total_damage_dealt_to_champions),
-        );
+        $quip = $this->quip($p, $match, $score['badge'] ?? null, $kda, $cs / $minutes, $champion, $enemy, $usedQuips);
+
+        $fields = [
+            $this->field("{$p->kills}/{$p->deaths}/{$p->assists}", '*'.Format::number($kda, 2).' KDA*'),
+            $this->field(Format::number($cs / $minutes, 1).' CS/min', '*'.min(100, round($takedowns / $teamKills * 100)).'% kill participation*'),
+            $this->field($this->compact($p->total_damage_dealt_to_champions).' damage', $this->bar($p->total_damage_dealt_to_champions / $topDamage)),
+        ];
 
         if ($score !== null) {
-            $lines[] = '🏅 '.($score['badge'] ? "**{$score['badge']}** · " : '')."skor {$score['score']}";
+            // MVP and ACE say it all; everybody else gets their place among all players.
+            $fields[] = $this->field("🏅 Skor {$score['score']}", $score['badge'] ? "**{$score['badge']}**" : "#{$score['rank']} dari {$everyone->count()}");
         }
 
-        // The rate that moved the most over the last games, when it moved enough to be news.
-        $trend = $this->trends->forPlayer($p->player_id);
-        $notable = $trend !== null ? $this->trends->notable($trend) : null;
+        $rank = $this->currentRank($p->player_id, $match->queue_id);
 
-        if ($notable !== null) {
-            $lines[] = sprintf(
-                '%s *%s %s %d%% jadi %s dalam %d game terakhir (sebelumnya %s)*',
-                $notable['change'] > 0 ? '📈' : '📉',
-                $notable['label'],
-                $notable['change'] > 0 ? 'naik' : 'turun',
-                abs($notable['change']),
-                Format::number($notable['recent'], $notable['decimals']),
-                $trend['recent_games'],
-                Format::number($notable['before'], $notable['decimals']),
-            );
+        if ($rank !== null) {
+            $fields[] = $this->field('Rank', $rank);
         }
 
-        return implode("\n", $lines);
+        $queue = MatchQueue::fromQueueId($match->queue_id)?->label() ?? "Queue {$match->queue_id}";
+        $profileIcon = $this->image(fn () => $this->ddragon->profileIcon($p->player->profile_icon_id));
+        $championIcon = $this->image(fn () => $this->ddragon->championIcon($p->champion_name, $p->champion_id));
+
+        return [
+            // Discord does not read markdown in the author name, so it is not escaped.
+            'author' => array_filter(['name' => $p->player->name, 'icon_url' => $profileIcon]),
+            'title' => ($p->win ? '✅ Win' : '❌ Lose').' · '.$champion.($position ? " ({$position})" : '').($enemy ? " vs {$enemy}" : ''),
+            'description' => $quip ? "💬 *{$quip}*" : null,
+            'color' => $p->win ? self::GREEN : self::RED,
+            'thumbnail' => $championIcon ? ['url' => $championIcon] : null,
+            'fields' => $fields,
+            'footer' => ['text' => $queue.' · '.Format::duration($match->game_duration).$this->patch($match->game_version)],
+        ];
+    }
+
+    /**
+     * The joke of a card, from the most notable thing about the performance down
+     * to a plain win or loss.
+     *
+     * @param  list<string>  $used
+     */
+    private function quip(MatchParticipant $p, GameMatch $match, ?string $badge, float $kda, float $csPerMinute, string $champion, ?string $enemy, array &$used): ?string
+    {
+        $winStreak = $p->win ? $this->streaks->endingAt($p->player_id, $match) : 0;
+        $lossStreak = $p->win ? 0 : $this->streaks->lossesEndingAt($p->player_id, $match);
+
+        $categories = array_keys(array_filter([
+            'pentakill' => $p->penta_kills > 0,
+            'feeding' => $p->deaths >= 10 && $kda < 1,
+            'carry_loss' => ! $p->win && $badge === MatchScore::ACE,
+            'stomp_win' => $p->win && $kda >= 5,
+            'win_streak' => $winStreak >= self::QUIP_STREAK,
+            'loss_streak' => $lossStreak >= self::QUIP_STREAK,
+            'long_game' => $match->game_duration > 40 * 60,
+            'short_game' => $match->game_duration < 20 * 60,
+            // Supports are not meant to farm, and modes without lanes have no meaningful CS.
+            'low_cs' => $p->team_position && $p->team_position !== 'UTILITY' && $csPerMinute < 4.5,
+            ($p->win ? 'win' : 'loss') => true,
+        ]));
+
+        return $this->quips->pick($categories, [
+            'name' => $this->escape($p->player->name),
+            'champ' => $champion,
+            'enemy' => $enemy,
+            'kills' => $p->kills,
+            'deaths' => $p->deaths,
+            'assists' => $p->assists,
+            'kda' => Format::number($kda, 2),
+            'cs' => Format::number($csPerMinute, 1),
+            'streak' => max($winStreak, $lossStreak) ?: null,
+            'minutes' => (int) floor($match->game_duration / 60),
+            // The LP change of a single game is unknown (ranks are synced separately),
+            // so lines that need {lp} are skipped rather than made up.
+            'lp' => null,
+        ], "{$match->match_id}|{$p->puuid}", $used);
+    }
+
+    /** "Gold II · 54 LP" from the latest snapshot, for ranked games only. */
+    private function currentRank(int $playerId, int $queueId): ?string
+    {
+        $queue = RankedQueue::fromQueueId($queueId);
+
+        if ($queue === null) {
+            return null;
+        }
+
+        $snapshot = RankSnapshot::query()
+            ->where('player_id', $playerId)
+            ->where('queue_type', $queue->value)
+            ->orderByDesc('captured_at')
+            ->orderByDesc('id')
+            ->first();
+
+        return $snapshot ? RankScore::label($snapshot->tier, $snapshot->rank, $snapshot->league_points) : null;
+    }
+
+    /** @return array{name: string, value: string, inline: bool} */
+    private function field(string $name, string $value): array
+    {
+        return ['name' => $name, 'value' => $value, 'inline' => true];
+    }
+
+    /** A text bar of 8 blocks for a share between 0 and 1. */
+    private function bar(float $share): string
+    {
+        $filled = (int) round(max(0, min(1, $share)) * 8);
+
+        return str_repeat('▰', $filled).str_repeat('▱', 8 - $filled);
+    }
+
+    /** A Data Dragon image URL, or null when it cannot be had (the card then goes without it). */
+    private function image(callable $url): ?string
+    {
+        try {
+            return $url();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**

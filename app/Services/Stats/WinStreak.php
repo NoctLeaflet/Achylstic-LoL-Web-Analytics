@@ -6,7 +6,7 @@ use App\Models\GameMatch;
 use App\Models\MatchParticipant;
 
 /**
- * Consecutive ranked wins of a player, counted backwards from a given match.
+ * Consecutive wins (or losses) of a player, counted backwards from a given match.
  *
  * Remakes are skipped like in every other statistic. Matches are looked at in
  * the order they were played, so this must be asked for matches that are
@@ -19,6 +19,17 @@ final class WinStreak
 
     /** Wins in a row that end exactly at $match (0 when the player lost it). */
     public function endingAt(int $playerId, GameMatch $match): int
+    {
+        return $this->runEndingAt($playerId, $match, true);
+    }
+
+    /** Losses in a row that end exactly at $match (0 when the player won it). */
+    public function lossesEndingAt(int $playerId, GameMatch $match): int
+    {
+        return $this->runEndingAt($playerId, $match, false);
+    }
+
+    private function runEndingAt(int $playerId, GameMatch $match, bool $wins): int
     {
         $results = MatchParticipant::query()
             ->join('matches', 'matches.id', '=', 'match_participants.match_id')
@@ -38,7 +49,7 @@ final class WinStreak
         $streak = 0;
 
         foreach ($results as $won) {
-            if (! $won) {
+            if ((bool) $won !== $wins) {
                 break;
             }
 
